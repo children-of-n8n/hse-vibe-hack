@@ -1,4 +1,4 @@
-import { Elysia, t } from "elysia";
+import { Elysia } from "elysia";
 
 import { authModel } from "@acme/backend/modules/auth";
 import { jwt } from "@acme/backend/shared/jwt";
