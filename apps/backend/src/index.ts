@@ -20,4 +20,4 @@ export const app = new Elysia()
   .get("", redirect("/docs"))
   .listen(process.env.PORT ?? 3000);
 
-console.log(`Listening at http://${app.server?.hostname}:${app.server?.port}`);
+console.log(`Listening at ${app.server!.url}`);

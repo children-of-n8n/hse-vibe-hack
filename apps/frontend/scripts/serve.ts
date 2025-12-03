@@ -5,10 +5,10 @@ const server = Bun.serve({
   routes: {
     "/": index,
   },
-  development: {
+  development: process.env.NODE_ENV !== "production" && {
     hmr: true,
     console: true,
   },
 });
 
-console.log(`Listening at http://${server.hostname}:${server.port}`);
+console.log(`Listening at ${server.url}`);

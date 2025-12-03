@@ -10,6 +10,7 @@
     "postinstall": "cp -n .env.example .env || true && bun migrate",
     "lint": "biome lint",
     "migrate": "bun run scripts/migrate.ts",
+    "start": "bun run ./src/index.ts",
     "tsc": "tsc --noEmit"
   },
   "dependencies": {
