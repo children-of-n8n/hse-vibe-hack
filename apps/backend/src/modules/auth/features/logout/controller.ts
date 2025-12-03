@@ -18,7 +18,6 @@ export const authLogoutController = new Elysia({
       detail: {
         summary: "Logout current user",
         description: "Clear authentication cookie",
-        security: [{ auth: [] }],
       },
       response: {
         [StatusMap["No Content"]]: t.Void({

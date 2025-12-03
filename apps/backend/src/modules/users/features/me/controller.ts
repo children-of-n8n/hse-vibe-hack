@@ -18,6 +18,5 @@ export const usersMeController = new Elysia({
     detail: {
       summary: "Get current user",
       description: "Get authenticated user's information",
-      security: [{ auth: [] }],
     },
   });
