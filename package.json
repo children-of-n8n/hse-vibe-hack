@@ -5,12 +5,12 @@
   ],
   "scripts": {
     "build": "bun run --filter '*' build",
-    "check": "bun run --filter '*' check",
+    "check": "biome check",
     "clean": "bun run --filter '*' clean && rm -rf node_modules",
     "dev": "bun run --filter '*' dev",
-    "format": "bun run --filter '*' format && biome format --write",
+    "format": "biome format --write",
     "postinstall": "bun run --filter '*' postinstall",
-    "lint": "bun run --filter '*' lint",
+    "lint": "biome lint",
     "prepare": "git config core.hooksPath .githooks",
     "start": "bun run --filter '*' start",
     "tsc": "bun run --filter '*' tsc"

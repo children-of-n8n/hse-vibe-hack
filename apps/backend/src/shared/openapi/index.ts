@@ -1,4 +1,5 @@
 import { openapi as createElysiaOpenapi, fromTypes } from "@elysiajs/openapi";
+
 import { name, version } from "package.json";
 
 export const openapi = createElysiaOpenapi({

@@ -79,12 +79,15 @@
                 "!@acme/backend",
                 "!@acme/backend/**",
                 "!@acme/frontend",
-                "!@acme/frontend/**"
+                "!@acme/frontend/**",
+                "!package.json"
               ],
               ":BLANK_LINE:",
               ["@acme/backend", "@acme/backend/**"],
               ":BLANK_LINE:",
               ["@acme/frontend", "@acme/frontend/**"],
+              ":BLANK_LINE:",
+              "package.json",
               ":BLANK_LINE:",
               ":ALIAS:",
               ":BLANK_LINE:",
