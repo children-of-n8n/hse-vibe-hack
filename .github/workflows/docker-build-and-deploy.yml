@@ -1,0 +1,143 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  detect-changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Filter paths
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            backend:
+              - "apps/backend/**"
+              - "bun.lock"
+              - "package.json"
+            frontend:
+              - "apps/frontend/**"
+              - "bun.lock"
+              - "package.json"
+
+  backend:
+    name: Build backend image
+    needs: detect-changes
+    if: needs.detect-changes.outputs.backend == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    env:
+      REGISTRY: ghcr.io
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Set image namespace
+        run: echo "IMAGE_NAMESPACE=$(echo \"${{ github.repository_owner }}\" | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push backend
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/backend/Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/hse-vibe-hack-backend:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/hse-vibe-hack-backend:${{ github.sha }}
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,mode=max,scope=backend
+
+  frontend:
+    name: Build frontend image
+    needs: detect-changes
+    if: needs.detect-changes.outputs.frontend == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    env:
+      REGISTRY: ghcr.io
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Set image namespace
+        run: echo "IMAGE_NAMESPACE=$(echo \"${{ github.repository_owner }}\" | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_ENV"
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/frontend/Dockerfile
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/hse-vibe-hack-frontend:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/hse-vibe-hack-frontend:${{ github.sha }}
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,mode=max,scope=frontend
+
+  deploy-backend:
+    name: Deploy backend to Dokploy
+    needs: backend
+    if: needs.backend.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to Dokploy (backend)
+        env:
+          BACKEND_DEPLOY_URL: ${{ secrets.DOKPLOY_BACKEND_DEPLOY_URL }}
+        run: |
+          if [ -z "${BACKEND_DEPLOY_URL}" ]; then
+            echo "Missing BACKEND_DEPLOY_URL secret" >&2
+            exit 1
+          fi
+
+          curl -X GET "${BACKEND_DEPLOY_URL}"
+
+  deploy-frontend:
+    name: Deploy frontend to Dokploy
+    needs: frontend
+    if: needs.frontend.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to Dokploy (frontend)
+        env:
+          DOKPLOY_API_KEY: ${{ secrets.DOKPLOY_API_KEY }}
+          DOKPLOY_APPLICATION_ID: ${{ secrets.DOKPLOY_FRONTEND_APPLICATION_ID }}
+        run: |
+          payload=$(cat <<EOF
+          {
+            "applicationId": "${DOKPLOY_APPLICATION_ID}",
+            "title": "Auto-deploy from GitHub (frontend)",
+            "description": "Repository: https://github.com/${{ github.repository }}\nCommit: ${{ github.sha }}"
+          }
+          EOF
+          )
+
+          curl -X POST \
+            "https://dokploy.my.intezya.ru/api/application.deploy" \
+            -H "accept: application/json" \
+            -H "Content-Type: application/json" \
+            -H "x-api-key: ${DOKPLOY_API_KEY}" \
+            -d "${payload}"
