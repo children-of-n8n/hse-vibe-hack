@@ -5,13 +5,10 @@
   "scripts": {
     "check": "biome check",
     "clean": "rm -rf dist node_modules",
-    "predev": "bun migrate",
     "dev": "bun run --watch ./src/index.ts",
     "format": "biome format --write",
     "postinstall": "cp -n .env.example .env || true",
     "lint": "biome lint",
-    "migrate": "bun run ./scripts/migrate.ts",
-    "prestart": "bun migrate",
     "start": "bun run ./src/index.ts",
     "tsc": "tsc --noEmit"
   },
@@ -19,9 +16,11 @@
     "@elysiajs/cors": "^1.4.0",
     "@elysiajs/jwt": "^1.4.0",
     "@elysiajs/openapi": "^1.4.11",
+    "@sinclair/typebox": "^0.34.41",
     "drizzle-kit": "^0.31.7",
     "drizzle-orm": "^0.44.7",
     "elysia": "^1.4.16",
-    "jose": "^6.1.2"
+    "jose": "^6.1.2",
+    "postgres": "^3.4.7"
   }
 }

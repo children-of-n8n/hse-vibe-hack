@@ -2,8 +2,7 @@ import { spawnSync } from "node:child_process";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { migrate } from "drizzle-orm/bun-sqlite/migrator";
-
+import config from "../../drizzle.config";
 import { db } from "./client";
 
 const AUTO_MIGRATE = process.env.AUTO_MIGRATE ?? "true";
@@ -13,21 +12,13 @@ const AUTO_GENERATE_MIGRATIONS =
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
 const backendRoot = resolve(__dirname, "..", "..");
-const migrationsFolder = resolve(__dirname, "./migrations");
+const migrationsFolder = resolve(backendRoot, config.out as string);
 const drizzleConfig = resolve(backendRoot, "drizzle.config.ts");
 
 const generateMigrations = () => {
   const result = spawnSync(
     "bun",
-    [
-      "x",
-      "drizzle-kit",
-      "generate",
-      "--config",
-      drizzleConfig,
-      "--out",
-      migrationsFolder,
-    ],
+    ["x", "drizzle-kit", "generate", "--config", drizzleConfig],
     { stdio: "inherit", cwd: backendRoot },
   );
 
@@ -45,5 +36,6 @@ export const runMigrationsIfNeeded = async () => {
     generateMigrations();
   }
 
+  const { migrate } = await import("drizzle-orm/postgres-js/migrator");
   await migrate(db, { migrationsFolder });
 };

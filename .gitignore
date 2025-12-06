@@ -1,2 +1,8 @@
 /node_modules
 .idea
+!.run
+**.env
+!**.env.example
+!.run
+**.env
+!**.env.example
