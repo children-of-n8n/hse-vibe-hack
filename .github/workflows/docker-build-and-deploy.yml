@@ -5,6 +5,15 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      build_backend:
+        description: Build backend image
+        required: false
+        default: "true"
+      build_frontend:
+        description: Build frontend image
+        required: false
+        default: "true"
 
 permissions:
   contents: read
@@ -37,7 +46,7 @@ jobs:
   backend:
     name: Build backend image
     needs: detect-changes
-    if: needs.detect-changes.outputs.backend == 'true' || github.event_name == 'workflow_dispatch'
+    if: (github.event_name == 'workflow_dispatch' && github.event.inputs.build_backend != 'false') || (github.event_name != 'workflow_dispatch' && needs.detect-changes.outputs.backend == 'true')
     runs-on: ubuntu-latest
     env:
       REGISTRY: ghcr.io
@@ -69,7 +78,7 @@ jobs:
   frontend:
     name: Build frontend image
     needs: detect-changes
-    if: needs.detect-changes.outputs.frontend == 'true' || github.event_name == 'workflow_dispatch'
+    if: (github.event_name == 'workflow_dispatch' && github.event.inputs.build_frontend != 'false') || (github.event_name != 'workflow_dispatch' && needs.detect-changes.outputs.frontend == 'true')
     runs-on: ubuntu-latest
     env:
       REGISTRY: ghcr.io
