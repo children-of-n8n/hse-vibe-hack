@@ -28,8 +28,8 @@
 - Мокайте внешние вызовы (JWT, внешние API); без сетевого I/O в тестах.
 
 ## Миграции и данные
-- Схемы и миграции в `src/db` (drizzle). При запуске с `AUTO_GENERATE_MIGRATIONS`/`AUTO_MIGRATE` по умолчанию генерятся и применяются миграции.
-- Новые поля: обновите таблицу в `src/domain/<entity>/table.ts`, затем `bun run --filter @acme/backend migrate` или полагайтесь на авто-ген.
+- Схемы и миграции в `src/db` (drizzle). При старте с `AUTO_MIGRATE=true` применяются только уже сгенерированные миграции из `src/db/migrations`.
+- Новые поля: обновите таблицу в `src/domain/<entity>/table.ts`, затем вручную выполните `bun x drizzle-kit generate --config apps/backend/drizzle.config.ts` и `bun run --filter @acme/backend migrate`.
 - Не коммитьте `.env`; по умолчанию SQLite, для других БД обновите `DATABASE_URL` в `.env`.
 
 ## Разработка и команды

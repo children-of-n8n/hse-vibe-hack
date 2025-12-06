@@ -53,6 +53,17 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: 1.1.30
+      - name: Install dependencies
+        run: bun install --frozen-lockfile --ignore-scripts
+      - name: Ensure migrations are up-to-date
+        working-directory: apps/backend
+        run: |
+          bun x drizzle-kit generate --config ./drizzle.config.ts
+          git diff --quiet --exit-code ./src/db/migrations || (echo "Migrations not committed. Run the generate command locally and commit the changes." && exit 1)
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Set image namespace
