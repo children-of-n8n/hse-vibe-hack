@@ -1,6 +1,6 @@
 services:
   backend:
-    image: ghcr.io/children-of-n8n/hse-vibe-hack-backend
+    image: ghcr.io/children-of-n8n/hse-vibe-hack-backend:latest
     environment:
       - NODE_ENV=production
       - PORT=3000
