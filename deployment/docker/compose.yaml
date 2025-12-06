@@ -1,0 +1,12 @@
+services:
+  backend:
+    image: ghcr.io/children-of-n8n/hse-vibe-hack-backend
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    networks:
+      - application
+
+networks:
+  application:
+    driver: bridge
