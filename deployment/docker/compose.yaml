@@ -1,11 +1,25 @@
 services:
   backend:
-    image: ghcr.io/children-of-n8n/hse-vibe-hack-backend
+    image: ghcr.io/children-of-n8n/hse-vibe-hack-backend:latest
     environment:
       - NODE_ENV=production
       - PORT=3000
+      - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-hse_vibe_hack_db}
     networks:
       - application
+
+  postgres:
+    image: postgres:17
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB:-hse_vibe_hack_db}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - application
+    ports:
+      - "127.0.0.1:42913:5432" # Access only with ssh
 
 networks:
   application:
