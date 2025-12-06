@@ -14,7 +14,11 @@ const userRepository = new SqliteUserRepository();
 export const app = new Elysia()
   .onAfterResponse(({ set, request, route }) => {
     console.info(
-      `${request.method} ${route} ${set.status} ${InvertedStatusMap[set.status as unknown as keyof typeof InvertedStatusMap]}`,
+      `${request.method} ${route} ${set.status} ${
+        InvertedStatusMap[
+          set.status as unknown as keyof typeof InvertedStatusMap
+        ]
+      }`,
     );
   })
   .onError(({ code, error }) => {
@@ -28,6 +32,7 @@ export const app = new Elysia()
     createAuthController({ users: userRepository }),
     createUserController({ users: userRepository }),
   ])
+  .get("/health", () => "OK")
   .get("", redirect("/docs"))
   .listen(process.env?.PORT ?? 3000);
 
