@@ -7,6 +7,9 @@ services:
       - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-hse_vibe_hack_db}
     networks:
       - application
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   postgres:
     image: postgres:17
@@ -19,7 +22,15 @@ services:
     networks:
       - application
     ports:
-      - "127.0.0.1:42913:5432" # Access only with ssh
+      - "127.0.0.1:42913:5432" # Access only via ssh
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pgdata:
 
 networks:
   application:
