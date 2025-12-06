@@ -117,6 +117,8 @@ jobs:
         with:
           context: .
           file: apps/frontend/Dockerfile
+          build-args: |
+            API_BASE_URL=https://backend.hsevibehack.hacks.intezya.ru
           push: true
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/hse-vibe-hack-frontend:latest
