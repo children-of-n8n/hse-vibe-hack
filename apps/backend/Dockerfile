@@ -5,8 +5,7 @@ WORKDIR /app
 # Cache shared workspace dependencies
 COPY bun.lock package.json ./
 COPY apps/backend/package.json apps/backend/
-COPY apps/frontend/package.json apps/frontend/
-RUN bun install --frozen-lockfile --ignore-scripts
+RUN bun install --ignore-scripts
 
 FROM oven/bun:1 AS build
 WORKDIR /app

@@ -1,23 +1,27 @@
-# Frontend (React + Bun serve)
-FROM oven/bun:1 AS builder
+FROM oven/bun:1.2.2 AS build
+
 WORKDIR /app
 
+# Install workspace dependencies so frontend can type-check imports from the backend sources.
 COPY bun.lock package.json ./
-COPY apps/backend/package.json apps/backend/
-COPY apps/frontend/package.json apps/frontend/
+COPY apps/backend/package.json apps/backend/package.json
+COPY apps/frontend/package.json apps/frontend/package.json
 RUN bun install --frozen-lockfile --ignore-scripts
 
-COPY . .
-RUN bun run --filter @acme/frontend build
+ARG API_BASE_URL=https://backend.hsevibehack.hacks.intezya.ru
+ENV VITE_API_BASE_URL=${API_BASE_URL}
 
-FROM oven/bun:1 AS runtime
-WORKDIR /app
-ENV NODE_ENV=production
+# Copy source code for both frontend and backend (frontend uses backend DTOs/types).
+COPY apps/backend ./apps/backend
+COPY apps/frontend ./apps/frontend
 
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/apps/frontend ./apps/frontend
-COPY --from=builder /app/bun.lock ./bun.lock
-COPY --from=builder /app/package.json ./package.json
+WORKDIR /app/apps/frontend
+RUN bun run build
 
-EXPOSE 8000
-CMD ["bun", "run", "--filter", "@acme/frontend", "start"]
+FROM nginx:1.27-alpine
+
+COPY apps/frontend/nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=build /app/apps/frontend/src/app/dist /usr/share/nginx/html
+
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]

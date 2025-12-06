@@ -3,7 +3,8 @@ apps/*/node_modules
 dist
 apps/*/dist
 .git
-.env
+.githooks
+*.env*
 *.sqlite
 *.db
 tmp
