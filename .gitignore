@@ -3,3 +3,6 @@
 !.run
 **.env
 !**.env.example
+!.run
+**.env
+!**.env.example
