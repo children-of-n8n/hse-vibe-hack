@@ -1,0 +1,37 @@
+{
+  "lsp": {
+    "tailwindcss-language-server": {
+      "settings": {
+        "classAttributes": [".*class.*", ".*Class.*"],
+        "classFunctions": ["cn", "clsx", "cva", "tw"]
+      }
+    }
+  },
+  "languages": {
+    "CSS": {
+      "language_servers": ["tailwindcss-language-server"]
+    },
+    "JavaScript": {
+      "formatter": { "language_server": { "name": "biome" } },
+      "code_actions_on_format": {
+        "source.fixAll.biome": true,
+        "source.organizeImports.biome": true
+      }
+    },
+    "TypeScript": {
+      "formatter": { "language_server": { "name": "biome" } },
+      "code_actions_on_format": {
+        "source.fixAll.biome": true,
+        "source.organizeImports.biome": true
+      }
+    },
+    "TSX": {
+      "formatter": { "language_server": { "name": "biome" } },
+      "code_actions_on_format": {
+        "source.fixAll.biome": true,
+        "source.organizeImports.biome": true
+      }
+    }
+  },
+  "file_scan_exclusions": ["**/dist", "**/node_modules"]
+}
