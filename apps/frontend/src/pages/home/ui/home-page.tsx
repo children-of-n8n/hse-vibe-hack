@@ -28,7 +28,7 @@ export function HomePage() {
         <Button
           type="button"
           size="lg"
-          variant="outline"
+          variant="default"
           onClick={() => loginMutation.mutate()}
           disabled={loginMutation.isPending}
         >
@@ -39,7 +39,7 @@ export function HomePage() {
 
       {!!data && (
         <div className="space-y-4">
-          <Item variant="muted">
+          <Item variant="muted" className="border-border">
             <ItemMedia>
               <AtSignIcon />
             </ItemMedia>
@@ -49,7 +49,7 @@ export function HomePage() {
             </ItemContent>
           </Item>
 
-          <Item variant="muted">
+          <Item variant="muted" className="border-border">
             <ItemMedia>
               <HashIcon />
             </ItemMedia>
@@ -62,8 +62,8 @@ export function HomePage() {
           <Button
             type="button"
             size="lg"
-            variant="outline"
-            className="w-full text-destructive"
+            variant="destructive"
+            className="w-full"
             onClick={() => logoutMutation.mutate()}
             disabled={logoutMutation.isPending}
           >
