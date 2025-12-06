@@ -1,12 +1,21 @@
-import { Database } from "bun:sqlite";
-
-import { drizzle } from "drizzle-orm/bun-sqlite";
-import { migrate } from "drizzle-orm/bun-sqlite/migrator";
+import { drizzle } from "drizzle-orm/postgres-js";
+import { migrate } from "drizzle-orm/postgres-js/migrator";
+import postgres from "postgres";
 
 import config from "../drizzle.config";
 
-const db = drizzle(new Database(process.env.DATABASE_URL));
+const connectionString = process.env.DATABASE_URL;
 
-migrate(db, { migrationsFolder: config.out as string });
+if (!connectionString) {
+  throw new Error("DATABASE_URL is not set");
+}
 
-console.log("Database migrations applied.");
+const client = postgres(connectionString, { max: 1 });
+const db = drizzle(client);
+
+try {
+  await migrate(db, { migrationsFolder: config.out as string });
+  console.log("Database migrations applied.");
+} finally {
+  await client.end();
+}

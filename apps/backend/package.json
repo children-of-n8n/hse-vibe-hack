@@ -19,9 +19,11 @@
     "@elysiajs/cors": "^1.4.0",
     "@elysiajs/jwt": "^1.4.0",
     "@elysiajs/openapi": "^1.4.11",
+    "@sinclair/typebox": "^0.34.41",
     "drizzle-kit": "^0.31.7",
     "drizzle-orm": "^0.44.7",
     "elysia": "^1.4.16",
-    "jose": "^6.1.2"
+    "jose": "^6.1.2",
+    "postgres": "^3.4.7"
   }
 }

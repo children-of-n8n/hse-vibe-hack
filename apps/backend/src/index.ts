@@ -3,13 +3,13 @@ import { Elysia, InvertedStatusMap, redirect } from "elysia";
 import { createAuthController } from "@acme/backend/controllers/auth.controller";
 import { createUserController } from "@acme/backend/controllers/user.controller";
 import { runMigrationsIfNeeded } from "@acme/backend/db/migrate-on-start";
-import { SqliteUserRepository } from "@acme/backend/domain/users/user.sqlite-repository";
+import { PostgresUserRepository } from "@acme/backend/domain/users/user.postgres-repository";
 import { cors } from "@acme/backend/http/plugins/cors";
 import { openapi } from "@acme/backend/http/plugins/openapi";
 
 await runMigrationsIfNeeded();
 
-const userRepository = new SqliteUserRepository();
+const userRepository = new PostgresUserRepository();
 
 export const app = new Elysia()
   .onAfterResponse(({ set, request, route }) => {

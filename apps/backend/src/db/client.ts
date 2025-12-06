@@ -1,7 +1,13 @@
-import { Database } from "bun:sqlite";
-
-import { drizzle } from "drizzle-orm/bun-sqlite";
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
 
 import * as schema from "./schema";
 
-export const db = drizzle(new Database(process.env.DATABASE_URL), { schema });
+const connectionString = process.env.DATABASE_URL;
+
+if (!connectionString) {
+  throw new Error("DATABASE_URL is not set");
+}
+
+export const client = postgres(connectionString);
+export const db = drizzle(client, { schema });
