@@ -106,24 +106,14 @@ jobs:
     steps:
       - name: Deploy to Dokploy (backend)
         env:
-          DOKPLOY_API_KEY: ${{ secrets.DOKPLOY_API_KEY }}
-          DOKPLOY_APPLICATION_ID: ${{ secrets.DOKPLOY_BACKEND_APPLICATION_ID }}
+          BACKEND_DEPLOY_URL: ${{ secrets.DOKPLOY_BACKEND_DEPLOY_URL }}
         run: |
-          payload=$(cat <<EOF
-          {
-            "applicationId": "${DOKPLOY_APPLICATION_ID}",
-            "title": "Auto-deploy from GitHub (backend)",
-            "description": "Repository: https://github.com/${{ github.repository }}\nCommit: ${{ github.sha }}"
-          }
-          EOF
-          )
+          if [ -z "${BACKEND_DEPLOY_URL}" ]; then
+            echo "Missing BACKEND_DEPLOY_URL secret" >&2
+            exit 1
+          fi
 
-          curl -X POST \
-            "https://dokploy.my.intezya.ru/api/application.deploy" \
-            -H "accept: application/json" \
-            -H "Content-Type: application/json" \
-            -H "x-api-key: ${DOKPLOY_API_KEY}" \
-            -d "${payload}"
+          curl -X GET "${BACKEND_DEPLOY_URL}"
 
   deploy-frontend:
     name: Deploy frontend to Dokploy
