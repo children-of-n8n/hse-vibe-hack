@@ -2,6 +2,23 @@
   "$schema": "https://biomejs.dev/schemas/2.3.8/schema.json",
   "root": false,
   "extends": "//",
+  "files": {
+    "includes": [
+      "**",
+      "!!**/src/shared/ui",
+      "!!**/dist",
+      "!!**/etc",
+      "!!**/node_modules",
+      "!!**/public",
+      "**/*.js",
+      "**/*.jsx",
+      "**/*.md",
+      "**/*.mdx",
+      "**/*.mjs",
+      "**/*.ts",
+      "**/*.tsx"
+    ]
+  },
   "linter": {
     "domains": {
       "react": "all"
