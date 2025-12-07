@@ -1,5 +1,4 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useTransition } from "react";
 import { Controller, useForm } from "react-hook-form";
 
 import {
@@ -9,13 +8,10 @@ import {
 import { Button } from "@acme/frontend/shared/ui/button";
 import { Spinner } from "@acme/frontend/shared/ui/spinner";
 
+import { useLoginMutation } from "../lib/use-login-mutation";
 import { type LoginFormSchemaValues, loginFormSchema } from "../model/schema";
 
-export function LoginForm({
-  onSubmit,
-}: {
-  onSubmit?: (values: LoginFormSchemaValues) => void;
-}) {
+export function LoginForm() {
   const form = useForm<LoginFormSchemaValues>({
     mode: "onChange",
     resolver: zodResolver(loginFormSchema),
@@ -25,13 +21,9 @@ export function LoginForm({
     },
   });
 
-  const [submitting, startSubmitting] = useTransition();
+  const { mutateAsync, isPending } = useLoginMutation();
 
-  const submit = form.handleSubmit((values) => {
-    startSubmitting(() => {
-      onSubmit?.(values);
-    });
-  });
+  const submit = form.handleSubmit(async (values) => await mutateAsync(values));
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-4">
@@ -48,8 +40,8 @@ export function LoginForm({
         render={UserPasswordField}
       />
 
-      <Button type="submit" className="w-full" disabled={submitting}>
-        {submitting ? (
+      <Button type="submit" className="w-full" disabled={isPending}>
+        {isPending ? (
           <>
             <Spinner />
             Вход…

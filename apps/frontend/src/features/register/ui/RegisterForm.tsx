@@ -1,5 +1,4 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useTransition } from "react";
 import { Controller, useForm } from "react-hook-form";
 
 import {
@@ -9,16 +8,13 @@ import {
 import { Button } from "@acme/frontend/shared/ui/button";
 import { Spinner } from "@acme/frontend/shared/ui/spinner";
 
+import { useRegisterMutation } from "../lib/use-register-mutation";
 import {
   type RegisterFormSchemaValues,
   registerFormSchema,
 } from "../model/schema";
 
-export function RegisterForm({
-  onSubmit,
-}: {
-  onSubmit?: (values: RegisterFormSchemaValues) => void;
-}) {
+export function RegisterForm() {
   const form = useForm<RegisterFormSchemaValues>({
     mode: "onChange",
     resolver: zodResolver(registerFormSchema),
@@ -28,13 +24,9 @@ export function RegisterForm({
     },
   });
 
-  const [submitting, startSubmitting] = useTransition();
+  const { mutateAsync, isPending } = useRegisterMutation();
 
-  const submit = form.handleSubmit((values) => {
-    startSubmitting(() => {
-      onSubmit?.(values);
-    });
-  });
+  const submit = form.handleSubmit(async (values) => await mutateAsync(values));
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-4">
@@ -51,8 +43,8 @@ export function RegisterForm({
         render={UserPasswordField}
       />
 
-      <Button type="submit" className="w-full" disabled={submitting}>
-        {submitting ? (
+      <Button type="submit" className="w-full" disabled={isPending}>
+        {isPending ? (
           <>
             <Spinner />
             Регистрация…
