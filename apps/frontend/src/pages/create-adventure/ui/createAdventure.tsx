@@ -11,6 +11,7 @@ import {
   Share2,
 } from "lucide-react";
 import { useState } from "react";
+import { Link } from "react-router";
 import { toast } from "sonner";
 
 import type { Adventure } from "@acme/backend/controllers/contracts/adventure.schemas.ts";
@@ -241,12 +242,15 @@ export const CreateAdventure = () => {
       {/* Back Button - Always at bottom */}
       <div className="mt-6 border-border border-t pt-4">
         <Button
+          asChild
           variant="ghost"
           size="sm"
           className="w-full text-muted-foreground hover:text-foreground"
         >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Назад
+          <Link to="/">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Назад
+          </Link>
         </Button>
       </div>
     </main>

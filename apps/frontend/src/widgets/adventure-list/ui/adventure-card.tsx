@@ -33,8 +33,6 @@ export const AdventureCard = ({
           className="absolute inset-0 bg-center bg-cover"
           style={{ backgroundImage: `url(${displayImage})` }}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-background/30" />
-
         <div className="relative z-10 flex h-full w-full flex-col px-6 py-12">
           {/* Header with date and list button */}
           <div className="mb-auto flex items-center justify-between">
@@ -138,7 +136,6 @@ export const AdventureCard = ({
         className="absolute inset-0 bg-center bg-cover"
         style={{ backgroundImage: `url(${adventure?.photos[0]?.url})` }}
       />
-      <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-background/30" />
       <div className="relative z-10 flex h-full w-full flex-col px-6 py-12">
         {/* Header with date */}
         {adventure?.createdAt && (

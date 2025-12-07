@@ -1,4 +1,5 @@
 import { ChevronDown, Plus } from "lucide-react";
+import { Link } from "react-router";
 
 import { Button } from "@acme/frontend/shared/ui/button";
 
@@ -15,12 +16,15 @@ export function AdventureListPlaceholder({ onAdd }: { onAdd: VoidFunction }) {
         </p>
         {/* Add button */}
         <Button
+          asChild
           size="lg"
           onClick={onAdd}
           className="flex animate-pulse-glow items-center gap-3 rounded-full p-6! text-lg"
         >
-          <span>Взять приключение</span>
-          <Plus className="size-8" />
+          <Link to="/create">
+            <span>Взять приключение</span>
+            <Plus className="size-8" />
+          </Link>
         </Button>
       </div>
 
