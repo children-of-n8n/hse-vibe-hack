@@ -28,14 +28,14 @@ export const app = new Elysia()
       console.error(error);
     }
   })
+  .use([cors])
   .use([
-    cors,
-    openapi,
     createAuthController({ users: userRepository }),
     createAdventureController({ users: userRepository }),
     createPlannerController({ users: userRepository }),
     createUserController({ users: userRepository }),
   ])
+  .use(openapi)
   .get("/health", () => "OK")
   .get("", redirect("/docs"))
   .listen(process.env?.PORT ?? 3000);
