@@ -76,6 +76,14 @@ export const openapi = createElysiaOpenapi({
           url: base,
           description: "Текущий backend (APP_BASE_URL/BACKEND_BASE_URL)",
         },
+        {
+          url: "http://localhost:3000",
+          description: "Локальная разработка",
+        },
+        {
+          url: "https://backend.hsevibehack.hacks.intezya.ru",
+          description: "Внешний backend",
+        },
       ];
     })(),
   },
