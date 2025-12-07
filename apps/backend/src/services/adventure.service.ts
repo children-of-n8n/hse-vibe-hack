@@ -90,7 +90,7 @@ export const createAdventureService = (deps: {
       title: input.title,
       description,
       status: "upcoming",
-      summary: "",
+      summary: undefined,
       shareToken: buildShareToken(),
       creator,
       participants: [creator, ...friendParticipants],
@@ -163,9 +163,12 @@ export const createAdventureService = (deps: {
           participants: adventure.participants,
           description: adventure.description,
         })
-        .catch(() => null)) ?? adventure.summary;
+        .catch(() => null)) ?? undefined;
 
-    return updateAdventure(id, { status: "completed", summary });
+    return updateAdventure(id, {
+      status: "completed",
+      summary: summary ?? adventure.summary,
+    });
   };
 
   const joinByToken = async (
@@ -261,21 +264,22 @@ export const createAdventureService = (deps: {
             status: response.status,
             statusText: response.statusText,
           });
-        } else {
-          uploadedUrl = signed.photoUrl;
+          return null;
         }
+        uploadedUrl = signed.photoUrl;
       } catch (error) {
         console.error("Photo upload failed", error);
+        return null;
       }
     }
+
+    if (!uploadedUrl) return null;
 
     const uploader = await participantForUser(uploaderId);
     const photo: AdventurePhoto = {
       id: randomUUID(),
       adventureId,
-      url:
-        uploadedUrl ??
-        `https://placehold.co/800x600?text=${adventureId.slice(0, 6)}`,
+      url: uploadedUrl,
       uploader,
       caption,
       createdAt: now(),
