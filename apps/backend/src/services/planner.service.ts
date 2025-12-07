@@ -153,7 +153,7 @@ const buildPlanItem = (input: {
 });
 
 const formatDateForIcs = (date: Date) =>
-  date.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+  `${date.toISOString().replace(/[-:]/g, "").split(".")[0]}Z`;
 
 const baseInviteUrl = process.env.APP_BASE_URL ?? "https://example.com";
 
@@ -475,9 +475,9 @@ export const createPlannerService = () => {
       );
     };
 
-    overview.events.forEach((event: PlannerEvent) =>
-      addEvent(event.title, event.window),
-    );
+    overview.events.forEach((event: PlannerEvent) => {
+      addEvent(event.title, event.window);
+    });
     overview.todos.forEach((todo: PlannerTodo) => {
       const window = todo.due ?? fallbackWindow(range);
       addEvent(todo.title, window, todo.description);
@@ -528,19 +528,20 @@ export const createPlannerService = () => {
     _userId: string,
     request: PlannerPrioritizeRequest,
   ): Promise<PlannerPrioritizeResponse> => {
-    const sorted = [...request.tasks].sort((left, right) => {
-      const score = (task: (typeof request.tasks)[number]) => {
-        const importance = task.importance ?? 3;
-        const effort = task.effortMinutes ?? 30;
-        const due = task.window?.start
-          ? new Date(task.window.start).getTime()
-          : Date.now() + 24 * 60 * 60 * 1000;
+    type PrioritizeTask = PlannerPrioritizeRequest["tasks"][number];
+    const score = (task: PrioritizeTask) => {
+      const importance = task.importance ?? 3;
+      const effort = task.effortMinutes ?? 30;
+      const due = task.window?.start
+        ? new Date(task.window.start).getTime()
+        : Date.now() + 24 * 60 * 60 * 1000;
 
-        return importance * 3 + Math.max(0, 720 - effort) / 100 + 1 / due;
-      };
+      return importance * 3 + Math.max(0, 720 - effort) / 100 + 1 / due;
+    };
 
-      return score(right) - score(left);
-    });
+    const sorted = [...request.tasks].sort(
+      (left, right) => score(right) - score(left),
+    );
 
     const recommendations = sorted.map((task, index) => ({
       id: task.id,
