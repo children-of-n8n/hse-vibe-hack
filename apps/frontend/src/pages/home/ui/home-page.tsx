@@ -29,13 +29,17 @@ export function HomePage() {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-dvh">
       <div className="fixed top-4 right-4 left-4 z-50 flex justify-between">
         <ThemeToggler />
         <CurrentUserMenu currentUser={currentUser} />
       </div>
 
-      <AdventureList adventures={adventures} onAdd={() => {}} />
+      <AdventureList
+        adventures={adventures}
+        currentUserId={currentUser.id}
+        onAdd={() => {}}
+      />
 
       <BackToTopButton />
     </div>
