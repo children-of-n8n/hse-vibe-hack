@@ -12,6 +12,8 @@ import { ThemeProvider } from "@acme/frontend/shared/ui/theme-provider";
 
 import "./index.css";
 
+import { CreateAdventure } from "@acme/frontend/pages/create-adventure";
+
 const rootElement = document.getElementById("root");
 
 if (!rootElement) {
@@ -27,6 +29,7 @@ const app = (
             <Route path="/" element={<HomePage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/create" element={<CreateAdventure />} />
           </Routes>
         </BrowserRouter>
       </QueryClientProvider>
