@@ -345,7 +345,7 @@ export const createPostgresAdventureStore = (): AdventureStore => {
       return result ? toReaction(result) : null;
     },
 
-    async removeReaction(adventureId, userId, emoji) {
+    async removeReaction(adventureId, _userId, _emoji) {
       const [deleted] = await db
         .delete(adventureReactions)
         .where(eq(adventureReactions.adventureId, adventureId))

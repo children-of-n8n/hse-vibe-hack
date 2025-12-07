@@ -93,6 +93,7 @@ describe("adventure service", () => {
   it("uploads photo and manages reactions", async () => {
     const users = new InMemoryUserRepository();
     const owner = await users.create({ username: "owner", password: "pwd" });
+    const friend = await users.create({ username: "friend", password: "pwd" });
     const service = createAdventureService({
       users,
       store: createInMemoryAdventureStore(),
@@ -101,11 +102,9 @@ describe("adventure service", () => {
       title: "Фото-тест",
     });
 
-    const signed = await service.signPhotoUpload(
-      adventure.id,
-      owner.id,
-      "image.jpg",
-    );
+    await service.joinByToken(friend.id, adventure.shareToken);
+
+    const signed = await service.signPhotoUpload(adventure.id, "image.jpg");
     expect(signed?.uploadUrl).toContain("image.jpg");
 
     const photo = await service.uploadPhoto(
@@ -119,8 +118,13 @@ describe("adventure service", () => {
     const reaction = await service.addReaction(adventure.id, owner.id, "🔥");
     expect(reaction?.emoji).toBe("🔥");
 
+    const replaced = await service.addReaction(adventure.id, friend.id, "💚");
+    expect(replaced?.emoji).toBe("💚");
+
     const reactions = await service.listReactions(adventure.id);
     expect(reactions?.length).toBe(1);
+    expect(reactions?.[0]?.emoji).toBe("💚");
+    expect(reactions?.[0]?.userId).toBe(friend.id);
 
     const removed = await service.removeReaction(adventure.id, owner.id, "🔥");
     expect(removed).toBe(true);

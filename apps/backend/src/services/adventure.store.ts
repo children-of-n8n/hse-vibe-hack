@@ -140,7 +140,7 @@ export const createInMemoryAdventureStore = (
       return { ...stored };
     },
 
-    async removeReaction(adventureId, userId, emoji) {
+    async removeReaction(adventureId, _userId, _emoji) {
       let removed = false;
       for (const [id, entry] of [...reactions.entries()]) {
         if (entry.adventureId === adventureId) {

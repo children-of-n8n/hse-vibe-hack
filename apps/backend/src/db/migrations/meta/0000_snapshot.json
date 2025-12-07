@@ -57,7 +57,13 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
+      "uniqueConstraints": {
+        "adventure_reactions_adventure_id_unique": {
+          "name": "adventure_reactions_adventure_id_unique",
+          "nullsNotDistinct": false,
+          "columns": ["adventure_id"]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false

@@ -88,6 +88,9 @@ export const createAdventureController = (deps: {
       },
     ],
   };
+  const reactionsResponseSchema = t.Object({
+    reactions: t.Array(adventureReactionSchema),
+  });
 
   return new Elysia({
     name: "adventure-controller",
@@ -529,14 +532,15 @@ export const createAdventureController = (deps: {
               set.status = "Not Found";
               return;
             }
+            const reactions = await service.listReactions(params.id);
             set.status = "Created";
-            return reaction;
+            return { reactions: reactions ?? [] };
           },
           {
             params: t.Object({ id: t.String({ format: "uuid" }) }),
             body: "AdventureReactionInput",
             response: {
-              [StatusMap.Created]: adventureReactionSchema,
+              [StatusMap.Created]: reactionsResponseSchema,
               [StatusMap["Not Found"]]: t.Void(),
             },
             detail: {
@@ -583,9 +587,7 @@ export const createAdventureController = (deps: {
           {
             params: t.Object({ id: t.String({ format: "uuid" }) }),
             response: {
-              [StatusMap.OK]: t.Object({
-                reactions: t.Array(adventureReactionSchema),
-              }),
+              [StatusMap.OK]: reactionsResponseSchema,
               [StatusMap["Not Found"]]: t.Void(),
             },
             detail: {
