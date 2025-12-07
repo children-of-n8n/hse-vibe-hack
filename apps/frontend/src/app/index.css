@@ -166,7 +166,7 @@
   }
 
   main {
-    @apply isolate overflow-clip;
+    @apply isolate;
   }
 }
 
