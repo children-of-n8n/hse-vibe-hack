@@ -29,24 +29,31 @@ export function RegisterForm() {
   const submit = form.handleSubmit(async (values) => await mutateAsync(values));
 
   return (
-    <form onSubmit={submit} className="flex flex-col gap-4">
-      <h1>Регистрация</h1>
+    <form onSubmit={submit} className="w-full space-y-6">
+      <div className="space-y-2">
+        <h1 className="font-semibold text-3xl tracking-tight">Регистрация</h1>
+        <p className="text-muted-foreground text-sm">
+          Создайте аккаунт, чтобы начать
+        </p>
+      </div>
 
-      <Controller
-        control={form.control}
-        name="username"
-        render={UserUsernameField}
-      />
-      <Controller
-        control={form.control}
-        name="password"
-        render={UserPasswordField}
-      />
+      <div className="space-y-4">
+        <Controller
+          control={form.control}
+          name="username"
+          render={UserUsernameField}
+        />
+        <Controller
+          control={form.control}
+          name="password"
+          render={UserPasswordField}
+        />
+      </div>
 
-      <Button type="submit" className="w-full" disabled={isPending}>
+      <Button type="submit" className="w-full" disabled={isPending} size="lg">
         {isPending ? (
           <>
-            <Spinner />
+            <Spinner className="mr-2 h-4 w-4" />
             Регистрация…
           </>
         ) : (
