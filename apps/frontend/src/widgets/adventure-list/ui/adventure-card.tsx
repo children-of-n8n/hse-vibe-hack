@@ -1,6 +1,11 @@
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Camera, CheckCircle, ChevronDown, List } from "lucide-react";
+import { toast } from "sonner";
 
 import type { AdventureWithMedia } from "@acme/backend/controllers/contracts/adventure.schemas";
+
+import { api } from "@acme/frontend/shared/config/api";
+import { Button } from "@acme/frontend/shared/ui/button";
 
 interface AdventureCardProps {
   isOwn?: boolean;
@@ -19,6 +24,22 @@ export const AdventureCard = ({
   totalAdventures = 0,
   showScrollIndicator = false,
 }: AdventureCardProps) => {
+  const queryClient = useQueryClient();
+  const addReactionMutation = useMutation({
+    mutationFn: async (reaction: string) => {
+      await api
+        .adventures({ id: adventure?.id ?? "" })
+        .reactions.post({ emoji: reaction });
+      await queryClient.invalidateQueries({ queryKey: ["adventures"] });
+    },
+    onError: () => {
+      toast.error("Ошибка добавления реакции!");
+    },
+    onSuccess: () => {
+      toast.success("Реакция успешно добавлена!");
+    },
+  });
+
   if (isOwn && adventure) {
     const isCompleted = adventure.status === "completed";
     const displayImage =
@@ -220,15 +241,18 @@ export const AdventureCard = ({
         {/* Bottom actions */}
         <div className="mt-auto flex flex-col items-center gap-4">
           <div className="flex items-center gap-3">
-            <span className="cursor-pointer text-4xl transition-transform hover:scale-125">
-              🔥
-            </span>
-            <span className="cursor-pointer text-4xl transition-transform hover:scale-125">
-              ❤️
-            </span>
-            <span className="cursor-pointer text-4xl transition-transform hover:scale-125">
-              😍
-            </span>
+            {/*TODO: get reactions from adventure and extract count of them and display next to each reaction*/}
+            {["🔥", "❤️", "😍", "😂", "🤔"].map((reaction) => (
+              <Button
+                key={reaction}
+                variant="outline"
+                className="size-12 cursor-pointer rounded-full text-3xl transition-transform hover:scale-115"
+                onClick={() => addReactionMutation.mutate?.(reaction)}
+                disabled={addReactionMutation.isPending}
+              >
+                {reaction}
+              </Button>
+            ))}
           </div>
         </div>
       </div>
