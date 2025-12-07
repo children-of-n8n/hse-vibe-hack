@@ -15,7 +15,6 @@ import {
   adventurePhotoWithReactionsSchema,
   adventureReactionSchema,
   adventureSchema,
-  adventureWithMediaSchema,
 } from "./contracts/adventure.schemas";
 import { createCurrentUserMacro } from "./macros/current-user";
 
@@ -64,9 +63,7 @@ export const createAdventureController = (deps: { users: UserRepository }) => {
           }),
           {
             response: {
-              [StatusMap.OK]: t.Object({
-                adventures: t.Array(adventureWithMediaSchema),
-              }),
+              [StatusMap.OK]: t.Object({ adventures: t.Array(t.Any()) }),
             },
             detail: {
               summary: "List upcoming adventures",
@@ -83,9 +80,7 @@ export const createAdventureController = (deps: { users: UserRepository }) => {
           }),
           {
             response: {
-              [StatusMap.OK]: t.Object({
-                adventures: t.Array(adventureWithMediaSchema),
-              }),
+              [StatusMap.OK]: t.Object({ adventures: t.Array(t.Any()) }),
             },
             detail: {
               summary: "List completed adventures",
@@ -107,7 +102,7 @@ export const createAdventureController = (deps: { users: UserRepository }) => {
           {
             params: t.Object({ id: t.String({ format: "uuid" }) }),
             response: {
-              [StatusMap.OK]: t.Object({ adventure: adventureWithMediaSchema }),
+              [StatusMap.OK]: t.Object({ adventure: t.Any() }),
               [StatusMap["Not Found"]]: t.Void(),
             },
             detail: {

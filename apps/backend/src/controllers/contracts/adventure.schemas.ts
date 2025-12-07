@@ -90,23 +90,19 @@ export const adventureReactionSchema = t.Object({
 
 export type AdventureReaction = Static<typeof adventureReactionSchema>;
 
-export const adventurePhotoWithReactionsSchema = t.Intersect([
-  adventurePhotoSchema,
-  t.Object({
-    reactions: t.Array(adventureReactionSchema),
-  }),
-]);
+export const adventurePhotoWithReactionsSchema = t.Object({
+  ...adventurePhotoSchema.properties,
+  reactions: t.Array(adventureReactionSchema),
+});
 
 export type AdventurePhotoWithReactions = Static<
   typeof adventurePhotoWithReactionsSchema
 >;
 
-export const adventureWithMediaSchema = t.Intersect([
-  adventureSchema,
-  t.Object({
-    photos: t.Array(adventurePhotoWithReactionsSchema, { default: [] }),
-  }),
-]);
+export const adventureWithMediaSchema = t.Object({
+  ...adventureSchema.properties,
+  photos: t.Array(adventurePhotoWithReactionsSchema, { default: [] }),
+});
 
 export type AdventureWithMedia = Static<typeof adventureWithMediaSchema>;
 
