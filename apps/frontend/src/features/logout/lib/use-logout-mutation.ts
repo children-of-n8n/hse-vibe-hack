@@ -1,8 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
+import { usersMeQueryOptions } from "@acme/frontend/entities/user";
 import { api } from "@acme/frontend/shared/config/api";
-
-import { usersMeQueryOptions } from "./users-me-query-options";
 
 export const useLogoutMutation = () => {
   const queryClient = useQueryClient();
