@@ -33,6 +33,8 @@ CREATE TABLE "adventures" (
 	"description" text NOT NULL,
 	"status" "adventure_status" DEFAULT 'upcoming' NOT NULL,
 	"share_token" text NOT NULL,
+	"summary" text,
+	"starts_at" timestamp DEFAULT now() NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "adventures_share_token_unique" UNIQUE("share_token")

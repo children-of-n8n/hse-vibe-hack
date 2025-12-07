@@ -42,6 +42,7 @@ export const createAdventureController = (deps: {
     );
   const exampleAdventure: AdventureWithMedia = {
     id: "11111111-1111-1111-1111-111111111111",
+    creatorId: "22222222-2222-2222-2222-222222222222",
     title: "Ночное приключение",
     description:
       "Идея: Ночное приключение. Компания: alice, bob. Будет весело и запомнится.",
@@ -200,10 +201,13 @@ export const createAdventureController = (deps: {
         )
         .post(
           "/:id/complete",
-          async ({ params, set }) => {
-            const completed = await service.completeAdventure(params.id);
+          async ({ currentUser, params, set }) => {
+            const completed = await service.completeAdventure(
+              params.id,
+              currentUser.id,
+            );
             if (!completed) {
-              set.status = "Not Found";
+              set.status = "Forbidden";
               return;
             }
             return completed;
@@ -212,11 +216,12 @@ export const createAdventureController = (deps: {
             params: t.Object({ id: t.String({ format: "uuid" }) }),
             response: {
               [StatusMap.OK]: adventureSchema,
-              [StatusMap["Not Found"]]: t.Void(),
+              [StatusMap.Forbidden]: t.Void(),
             },
             detail: {
               summary: "Complete adventure",
-              description: "Помечает приключение завершённым.",
+              description:
+                "Помечает приключение завершённым (только владелец).",
             },
           },
         )
@@ -347,7 +352,7 @@ export const createAdventureController = (deps: {
               (body as { contentType?: string }).contentType,
             );
             if (!photo) {
-              set.status = "Not Found";
+              set.status = "Forbidden";
               return;
             }
             set.status = "Created";
@@ -373,7 +378,7 @@ export const createAdventureController = (deps: {
             response: { [StatusMap.Created]: adventurePhotoSchema },
             detail: {
               summary: "Upload photo",
-              description: "Прикрепить фото к приключению (или указать URL).",
+              description: "Прикрепить фото к приключению (только владелец).",
             },
           },
         )
@@ -385,7 +390,7 @@ export const createAdventureController = (deps: {
               (body as { filename: string }).filename,
             );
             if (!signed) {
-              set.status = "Not Found";
+              set.status = "Forbidden";
               return;
             }
             return signed;

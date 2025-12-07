@@ -40,6 +40,7 @@ const toAdventure = (
   participants: AdventureParticipant[],
 ): Adventure => ({
   id: base.id,
+  creatorId: base.creatorId,
   title: base.title,
   description: base.description,
   status: base.status,

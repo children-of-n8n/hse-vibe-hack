@@ -77,6 +77,7 @@ export const createAdventureService = (deps: {
 
     const adventure: Adventure = {
       id: randomUUID(),
+      creatorId: creator.id,
       title: input.title,
       description,
       status: "upcoming",
@@ -138,9 +139,13 @@ export const createAdventureService = (deps: {
     return persisted;
   };
 
-  const completeAdventure = async (id: string): Promise<Adventure | null> => {
+  const completeAdventure = async (
+    id: string,
+    requesterId?: string,
+  ): Promise<Adventure | null> => {
     const adventure = await store.findById(id);
     if (!adventure) return null;
+    if (requesterId && adventure.creatorId !== requesterId) return null;
 
     const summary =
       (await ai
@@ -220,6 +225,9 @@ export const createAdventureService = (deps: {
     photoUrl?: string,
     _contentType?: string,
   ): Promise<AdventurePhoto | null> => {
+    const adventure = await store.findById(adventureId);
+    if (!adventure || adventure.creatorId !== uploaderId) return null;
+
     const uploader = await participantForUser(uploaderId);
     const photo: AdventurePhoto = {
       id: randomUUID(),

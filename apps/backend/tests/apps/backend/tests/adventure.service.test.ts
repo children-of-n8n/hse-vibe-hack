@@ -44,7 +44,7 @@ describe("adventure service", () => {
     const joined = await service.joinByToken(friend.id, adventure.shareToken);
     expect(joined?.participants.some((p) => p.id === friend.id)).toBe(true);
 
-    const completed = await service.completeAdventure(adventure.id);
+    const completed = await service.completeAdventure(adventure.id, owner.id);
     expect(completed?.status).toBe("completed");
   });
 
@@ -78,7 +78,7 @@ describe("adventure service", () => {
     const first = await service.listByStatus(owner.id, "upcoming");
     expect(first.find((a) => a.id === adventure.id)).toBeDefined();
 
-    await service.completeAdventure(adventure.id);
+    await service.completeAdventure(adventure.id, owner.id);
     const upcoming = await service.listByStatus(owner.id, "upcoming");
     expect(upcoming.find((a) => a.id === adventure.id)).toBeUndefined();
 
