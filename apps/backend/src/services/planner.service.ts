@@ -177,7 +177,6 @@ export const createPlannerService = () => {
         patch.reminder ?? current.reminder,
         DEFAULT_TODO_REMINDER,
       ),
-      recurrence: patch.recurrence ?? current.recurrence,
       status: patch.status ?? current.status,
     };
 

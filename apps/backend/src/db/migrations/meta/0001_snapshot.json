@@ -353,31 +353,12 @@
           "primaryKey": false,
           "notNull": false
         },
-        "recurrence": {
-          "name": "recurrence",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
         "reminder_minutes": {
           "name": "reminder_minutes",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
           "default": 15
-        },
-        "source_event_ids": {
-          "name": "source_event_ids",
-          "type": "text[]",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "promotes_habit": {
-          "name": "promotes_habit",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
         },
         "tags": {
           "name": "tags",
@@ -488,7 +469,7 @@
     "public.report_task_type": {
       "name": "report_task_type",
       "schema": "public",
-      "values": ["todo", "crazy", "event", "habit"]
+      "values": ["todo", "crazy"]
     },
     "public.todo_status": {
       "name": "todo_status",
