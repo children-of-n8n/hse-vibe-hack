@@ -88,6 +88,28 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      minio:
+        image: minio/minio:latest
+        env:
+          MINIO_ROOT_USER: minio
+          MINIO_ROOT_PASSWORD: minio123
+        ports:
+          - 9000:9000
+        command: server /data --console-address ":9001"
+        options: >-
+          --health-cmd "curl -f http://localhost:9000/minio/health/ready"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -107,30 +129,14 @@ jobs:
           if [ -n "${{ secrets.TEST_AUTO_MIGRATE }}" ]; then
             echo "AUTO_MIGRATE=${{ secrets.TEST_AUTO_MIGRATE }}" >> .env
           fi
-          if [ -n "${{ secrets.TEST_REDIS_URL }}" ]; then
-            echo "REDIS_URL=${{ secrets.TEST_REDIS_URL }}" >> .env
-          fi
-          if [ -n "${{ secrets.TEST_S3_BUCKET }}" ]; then
-            echo "S3_BUCKET=${{ secrets.TEST_S3_BUCKET }}" >> .env
-          fi
-          if [ -n "${{ secrets.TEST_S3_REGION }}" ]; then
-            echo "S3_REGION=${{ secrets.TEST_S3_REGION }}" >> .env
-          fi
-          if [ -n "${{ secrets.TEST_S3_ACCESS_KEY }}" ]; then
-            echo "S3_ACCESS_KEY=${{ secrets.TEST_S3_ACCESS_KEY }}" >> .env
-          fi
-          if [ -n "${{ secrets.TEST_S3_SECRET_KEY }}" ]; then
-            echo "S3_SECRET_KEY=${{ secrets.TEST_S3_SECRET_KEY }}" >> .env
-          fi
-          if [ -n "${{ secrets.TEST_S3_ENDPOINT }}" ]; then
-            echo "S3_ENDPOINT=${{ secrets.TEST_S3_ENDPOINT }}" >> .env
-          fi
-          if [ -n "${{ secrets.TEST_S3_PUBLIC_BASE_URL }}" ]; then
-            echo "S3_PUBLIC_BASE_URL=${{ secrets.TEST_S3_PUBLIC_BASE_URL }}" >> .env
-          fi
-          if [ -n "${{ secrets.TEST_APP_BASE_URL }}" ]; then
-            echo "APP_BASE_URL=${{ secrets.TEST_APP_BASE_URL }}" >> .env
-          fi
+          echo "REDIS_URL=${REDIS_URL:-redis://:redispass@redis:6379}" >> .env
+          echo "S3_BUCKET=${S3_BUCKET:-test-bucket}" >> .env
+          echo "S3_REGION=${S3_REGION:-us-east-1}" >> .env
+          echo "S3_ACCESS_KEY=${S3_ACCESS_KEY:-minio}" >> .env
+          echo "S3_SECRET_KEY=${S3_SECRET_KEY:-minio123}" >> .env
+          echo "S3_ENDPOINT=${S3_ENDPOINT:-http://localhost:9000}" >> .env
+          echo "S3_PUBLIC_BASE_URL=${S3_PUBLIC_BASE_URL:-http://localhost:9000}" >> .env
+          echo "APP_BASE_URL=${APP_BASE_URL:-http://localhost:3000}" >> .env
       - name: Set up Bun
         uses: oven-sh/setup-bun@v1
         with:
