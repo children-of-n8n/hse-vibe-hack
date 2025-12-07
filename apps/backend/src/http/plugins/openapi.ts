@@ -66,12 +66,18 @@ export const openapi = createElysiaOpenapi({
       },
     },
     security: [{ cookieAuth: [] }],
-    servers: [
-      {
-        url: "http://localhost:3000",
-        description: "Локальная среда разработки",
-      },
-    ],
+    servers: (() => {
+      const base =
+        process.env.APP_BASE_URL ??
+        process.env.BACKEND_BASE_URL ??
+        "http://localhost:3000";
+      return [
+        {
+          url: base,
+          description: "Текущий backend (APP_BASE_URL/BACKEND_BASE_URL)",
+        },
+      ];
+    })(),
   },
   // Resolve source entry regardless of cwd (works in monorepo and docker)
   references: (() => {
