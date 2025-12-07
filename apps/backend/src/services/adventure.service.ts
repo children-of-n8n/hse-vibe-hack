@@ -14,32 +14,36 @@ import type { CacheClient } from "@acme/backend/shared/cache";
 import { cache as defaultCache } from "@acme/backend/shared/cache";
 import { createS3Signer } from "@acme/backend/shared/s3";
 
+import type { FriendRepository } from "../domain/friends/friend.repository";
+import {
+  type AdventureStore,
+  createInMemoryAdventureStore,
+} from "./adventure.store";
+import { createPostgresAdventureStore } from "./adventure.store.postgres";
 import { type AiClient, createAiClient } from "./ai.service";
 
-type AdventureState = {
-  adventures: Map<string, Adventure>;
-  photos: Map<string, AdventurePhoto>;
-  reactions: Map<string, AdventureReaction>;
-};
-
-const now = () => new Date();
+const defaultNow = () => new Date();
 
 const buildShareToken = () =>
   `ADV-${randomUUID().replace(/-/g, "").slice(0, 12)}`;
 
 export const createAdventureService = (deps: {
   users: UserRepository;
+  friends?: FriendRepository;
   cache?: CacheClient;
   ai?: AiClient;
+  store?: AdventureStore;
+  now?: () => Date;
 }) => {
-  const state: AdventureState = {
-    adventures: new Map(),
-    photos: new Map(),
-    reactions: new Map(),
-  };
   const cache = deps.cache ?? defaultCache;
   const signer = createS3Signer();
   const ai = deps.ai ?? createAiClient();
+  const now = deps.now ?? defaultNow;
+  const store =
+    deps.store ??
+    (process.env.NODE_ENV === "test"
+      ? createInMemoryAdventureStore(now)
+      : createPostgresAdventureStore());
 
   const participantForUser = async (
     userId: string,
@@ -60,6 +64,7 @@ export const createAdventureService = (deps: {
     const friendParticipants = await Promise.all(
       (input.friendIds ?? []).map((id) => participantForUser(id)),
     );
+    const startsAt = input.startsAt ?? now();
 
     const description =
       (await ai
@@ -77,16 +82,19 @@ export const createAdventureService = (deps: {
       status: "upcoming",
       summary: undefined,
       shareToken: buildShareToken(),
+      creator,
       participants: [creator, ...friendParticipants],
+      startsAt,
       createdAt: now(),
       updatedAt: now(),
     };
 
-    state.adventures.set(adventure.id, adventure);
-    for (const participant of adventure.participants) {
-      await cache.del(cacheKey("upcoming", participant.id));
-    }
-    return adventure;
+    const saved = await store.createAdventure(
+      adventure,
+      adventure.participants,
+    );
+    await invalidateCaches(saved);
+    return saved;
   };
 
   const listByStatus = async (
@@ -96,27 +104,25 @@ export const createAdventureService = (deps: {
     const cached = await cache.get<Adventure[]>(cacheKey(status, userId));
     if (cached) return cached;
 
-    const items = [...state.adventures.values()].filter(
-      (item) =>
-        item.status === status &&
-        item.participants.some((participant) => participant.id === userId),
-    );
-
+    const items = await store.listByStatus(userId, status);
     await cache.set(cacheKey(status, userId), items, 30);
     return items;
   };
 
   const getById = async (id: string): Promise<Adventure | null> => {
-    return state.adventures.get(id) ?? null;
+    return store.findById(id);
   };
 
   const updateAdventure = async (
     id: string,
     patch: Partial<
-      Pick<Adventure, "title" | "description" | "status" | "summary">
+      Pick<
+        Adventure,
+        "title" | "description" | "status" | "summary" | "startsAt"
+      >
     >,
   ): Promise<Adventure | null> => {
-    const current = state.adventures.get(id);
+    const current = await store.findById(id);
     if (!current) return null;
 
     const updated: Adventure = {
@@ -125,13 +131,15 @@ export const createAdventureService = (deps: {
       updatedAt: now(),
     };
 
-    state.adventures.set(id, updated);
-    await invalidateCaches(updated);
-    return updated;
+    const persisted = await store.updateAdventure(updated);
+    if (persisted) {
+      await invalidateCaches(persisted);
+    }
+    return persisted;
   };
 
   const completeAdventure = async (id: string): Promise<Adventure | null> => {
-    const adventure = state.adventures.get(id);
+    const adventure = await store.findById(id);
     if (!adventure) return null;
 
     const summary =
@@ -150,32 +158,24 @@ export const createAdventureService = (deps: {
     userId: string,
     token: string,
   ): Promise<Adventure | null> => {
-    const adventure = [...state.adventures.values()].find(
-      (item) => item.shareToken === token,
-    );
-
+    const adventure = await store.findByShareToken(token);
     if (!adventure) return null;
 
     const already = adventure.participants.some(
       (participant) => participant.id === userId,
     );
-
     if (already) return adventure;
 
     const participant = await participantForUser(userId);
-    const updated: Adventure = {
-      ...adventure,
-      participants: [...adventure.participants, participant],
-      updatedAt: now(),
-    };
-
-    state.adventures.set(adventure.id, updated);
-    await invalidateCaches(updated);
+    const updated = await store.addParticipant(adventure.id, participant);
+    if (updated) {
+      await invalidateCaches(updated);
+    }
     return updated;
   };
 
   const getShareToken = async (id: string) => {
-    const adventure = state.adventures.get(id);
+    const adventure = await store.findById(id);
     if (!adventure) return null;
 
     return {
@@ -187,30 +187,28 @@ export const createAdventureService = (deps: {
   const listParticipants = async (
     adventureId: string,
   ): Promise<AdventureParticipant[] | null> => {
-    const adventure = state.adventures.get(adventureId);
-    if (!adventure) return null;
-    return adventure.participants;
+    return store.listParticipants(adventureId);
+  };
+
+  const listFriends = async (
+    userId: string,
+  ): Promise<AdventureParticipant[]> => {
+    if (!deps.friends) return [];
+    const friends = await deps.friends.listByUser(userId);
+    return friends.map((friend) => ({
+      id: friend.id,
+      username: friend.name,
+      avatarUrl: friend.avatarUrl ?? undefined,
+    }));
   };
 
   const addParticipant = async (
     adventureId: string,
     userId: string,
   ): Promise<AdventureParticipant[] | null> => {
-    const adventure = state.adventures.get(adventureId);
-    if (!adventure) return null;
-
-    if (adventure.participants.some((p) => p.id === userId)) {
-      return adventure.participants;
-    }
-
     const participant = await participantForUser(userId);
-    const updated: Adventure = {
-      ...adventure,
-      participants: [...adventure.participants, participant],
-      updatedAt: now(),
-    };
-
-    state.adventures.set(adventure.id, updated);
+    const updated = await store.addParticipant(adventureId, participant);
+    if (!updated) return null;
     await invalidateCaches(updated);
     return updated.participants;
   };
@@ -222,9 +220,6 @@ export const createAdventureService = (deps: {
     photoUrl?: string,
     _contentType?: string,
   ): Promise<AdventurePhoto | null> => {
-    const adventure = state.adventures.get(adventureId);
-    if (!adventure) return null;
-
     const uploader = await participantForUser(uploaderId);
     const photo: AdventurePhoto = {
       id: randomUUID(),
@@ -237,19 +232,13 @@ export const createAdventureService = (deps: {
       createdAt: now(),
     };
 
-    state.photos.set(photo.id, photo);
-    return photo;
+    return store.createPhoto(photo);
   };
 
   const listPhotos = async (
     adventureId: string,
   ): Promise<AdventurePhoto[] | null> => {
-    const adventure = state.adventures.get(adventureId);
-    if (!adventure) return null;
-
-    return [...state.photos.values()].filter(
-      (photo) => photo.adventureId === adventureId,
-    );
+    return store.listPhotos(adventureId);
   };
 
   const listPhotosWithReactions = async (
@@ -270,16 +259,7 @@ export const createAdventureService = (deps: {
     adventureId: string,
     photoId: string,
   ): Promise<boolean> => {
-    const photo = state.photos.get(photoId);
-    if (!photo || photo.adventureId !== adventureId) return false;
-
-    state.photos.delete(photoId);
-    for (const [reactionId, reaction] of [...state.reactions.entries()]) {
-      if (reaction.photoId === photoId) {
-        state.reactions.delete(reactionId);
-      }
-    }
-    return true;
+    return store.deletePhoto(adventureId, photoId);
   };
 
   const addReaction = async (
@@ -287,15 +267,6 @@ export const createAdventureService = (deps: {
     userId: string,
     emoji: string,
   ): Promise<AdventureReaction | null> => {
-    const photo = state.photos.get(photoId);
-    if (!photo) return null;
-
-    for (const [id, reaction] of [...state.reactions.entries()]) {
-      if (reaction.photoId === photoId && reaction.userId === userId) {
-        state.reactions.delete(id);
-      }
-    }
-
     const reaction: AdventureReaction = {
       id: randomUUID(),
       photoId,
@@ -304,8 +275,7 @@ export const createAdventureService = (deps: {
       createdAt: now(),
     };
 
-    state.reactions.set(reaction.id, reaction);
-    return reaction;
+    return store.addReaction(reaction);
   };
 
   const removeReaction = async (
@@ -313,33 +283,17 @@ export const createAdventureService = (deps: {
     userId: string,
     emoji: string,
   ): Promise<boolean> => {
-    let removed = false;
-    for (const [id, reaction] of [...state.reactions.entries()]) {
-      if (
-        reaction.photoId === photoId &&
-        reaction.userId === userId &&
-        reaction.emoji === emoji
-      ) {
-        state.reactions.delete(id);
-        removed = true;
-      }
-    }
-    return removed;
+    return store.removeReaction(photoId, userId, emoji);
   };
 
   const listReactions = async (
     photoId: string,
   ): Promise<AdventureReaction[] | null> => {
-    const photo = state.photos.get(photoId);
-    if (!photo) return null;
-
-    return [...state.reactions.values()].filter(
-      (reaction) => reaction.photoId === photoId,
-    );
+    return store.listReactions(photoId);
   };
 
   const signPhotoUpload = async (adventureId: string, filename: string) => {
-    const adventure = state.adventures.get(adventureId);
+    const adventure = await store.findById(adventureId);
     if (!adventure) return null;
 
     const key = `adventures/${adventureId}/${randomUUID()}/${filename}`;
@@ -374,6 +328,7 @@ export const createAdventureService = (deps: {
     listReactions,
     signPhotoUpload,
     listPhotosWithReactions,
+    listFriends,
   };
 };
 

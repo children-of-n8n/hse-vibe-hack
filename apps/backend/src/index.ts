@@ -4,13 +4,17 @@ import { createAdventureController } from "@acme/backend/controllers/adventure.c
 import { createAuthController } from "@acme/backend/controllers/auth.controller";
 import { createUserController } from "@acme/backend/controllers/user.controller";
 import { runMigrationsIfNeeded } from "@acme/backend/db/migrate-on-start";
+import { PostgresFriendRepository } from "@acme/backend/domain/friends/friend.postgres-repository";
 import { PostgresUserRepository } from "@acme/backend/domain/users/user.postgres-repository";
 import { cors } from "@acme/backend/http/plugins/cors";
 import { openapi } from "@acme/backend/http/plugins/openapi";
+import { createPostgresAdventureStore } from "@acme/backend/services/adventure.store.postgres";
 
 await runMigrationsIfNeeded();
 
 const userRepository = new PostgresUserRepository();
+const adventureStore = createPostgresAdventureStore();
+const friendRepository = new PostgresFriendRepository();
 
 export const app = new Elysia()
   .onAfterResponse(({ set, request, route }) => {
@@ -30,7 +34,11 @@ export const app = new Elysia()
   .use([cors])
   .use([
     createAuthController({ users: userRepository }),
-    createAdventureController({ users: userRepository }),
+    createAdventureController({
+      users: userRepository,
+      store: adventureStore,
+      friends: friendRepository,
+    }),
     createUserController({ users: userRepository }),
   ])
   .use(openapi)

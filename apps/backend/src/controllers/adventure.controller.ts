@@ -1,7 +1,9 @@
 import { Elysia, StatusMap, t } from "elysia";
 
+import type { FriendRepository } from "@acme/backend/domain/friends/friend.repository";
 import type { UserRepository } from "@acme/backend/domain/users/user.repository";
 import { createAdventureService } from "@acme/backend/services/adventure.service";
+import type { AdventureStore } from "@acme/backend/services/adventure.store";
 
 import type {
   Adventure,
@@ -19,8 +21,16 @@ import {
 } from "./contracts/adventure.schemas";
 import { createCurrentUserMacro } from "./macros/current-user";
 
-export const createAdventureController = (deps: { users: UserRepository }) => {
-  const service = createAdventureService(deps);
+export const createAdventureController = (deps: {
+  users: UserRepository;
+  store?: AdventureStore;
+  friends?: FriendRepository;
+}) => {
+  const service = createAdventureService({
+    users: deps.users,
+    store: deps.store,
+    friends: deps.friends,
+  });
   const enrichWithMedia = async (
     adventures: Adventure[],
   ): Promise<AdventureWithMedia[]> =>
@@ -43,6 +53,8 @@ export const createAdventureController = (deps: { users: UserRepository }) => {
       { id: "22222222-2222-2222-2222-222222222222", username: "alice" },
       { id: "33333333-3333-3333-3333-333333333333", username: "bob" },
     ],
+    creator: { id: "22222222-2222-2222-2222-222222222222", username: "alice" },
+    startsAt: new Date("2024-01-02T18:00:00.000Z"),
     createdAt: new Date("2024-01-01T00:00:00.000Z"),
     updatedAt: new Date("2024-01-01T00:00:00.000Z"),
     photos: [
@@ -304,6 +316,23 @@ export const createAdventureController = (deps: { users: UserRepository }) => {
             detail: {
               summary: "Add participant",
               description: "Добавление друга в приключение.",
+            },
+          },
+        )
+        .get(
+          "/friends",
+          async ({ currentUser }) => {
+            return { friends: await service.listFriends(currentUser.id) };
+          },
+          {
+            response: {
+              [StatusMap.OK]: t.Object({
+                friends: t.Array(adventureParticipantSchema),
+              }),
+            },
+            detail: {
+              summary: "List friends",
+              description: "Друзья пользователя (для выбора участников).",
             },
           },
         )

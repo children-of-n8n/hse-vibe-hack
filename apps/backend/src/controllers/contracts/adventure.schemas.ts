@@ -35,7 +35,9 @@ export const adventureSchema = t.Object({
     maxLength: 32,
     description: "Shareable token for instant join",
   }),
+  creator: adventureParticipantSchema,
   participants: t.Array(adventureParticipantSchema),
+  startsAt: t.Date({ description: "Scheduled start time" }),
   createdAt: t.Date(),
   updatedAt: t.Date(),
 });
@@ -44,6 +46,7 @@ export type Adventure = Static<typeof adventureSchema>;
 
 export const adventureCreateSchema = t.Object({
   title: adventureSchema.properties.title,
+  startsAt: t.Optional(adventureSchema.properties.startsAt),
   friendIds: t.Optional(
     t.Array(t.String({ format: "uuid" }), {
       description: "Friends to invite",
@@ -58,6 +61,7 @@ export const adventureUpdateSchema = t.Partial(
     title: adventureSchema.properties.title,
     description: adventureSchema.properties.description,
     summary: adventureSchema.properties.summary,
+    startsAt: adventureSchema.properties.startsAt,
   }),
 );
 

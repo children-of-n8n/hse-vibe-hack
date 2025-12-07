@@ -8,6 +8,7 @@ import type {
   User,
   UserRepository,
 } from "@acme/backend/domain/users/user.repository";
+import { createInMemoryAdventureStore } from "@acme/backend/services/adventure.store";
 
 // Легковесный in-memory репозиторий, чтобы тесты не трогали реальную БД.
 export class InMemoryUserRepository implements UserRepository {
@@ -58,7 +59,10 @@ export const createAdventureTestApp = (users: InMemoryUserRepository) =>
   new Elysia().use([
     createAuthController({ users }),
     createUserController({ users }),
-    createAdventureController({ users }),
+    createAdventureController({
+      users,
+      store: createInMemoryAdventureStore(),
+    }),
   ]);
 
 export const authJsonRequest = (path: string, body: unknown, cookie?: string) =>

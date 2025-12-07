@@ -128,6 +128,8 @@ export const adventures = pgTable("adventures", {
   description: text("description").notNull(),
   status: adventureStatusEnum("status").notNull().default("upcoming"),
   shareToken: text("share_token").notNull().unique(),
+  summary: text("summary"),
+  startsAt: timestamp("starts_at").notNull().defaultNow(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
