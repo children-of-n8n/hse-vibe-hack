@@ -10,6 +10,7 @@
     "postinstall": "cp -n .env.example .env || true",
     "lint": "biome lint",
     "start": "bun run ./src/index.ts",
+    "test": "bun test",
     "tsc": "tsc --noEmit"
   },
   "dependencies": {
