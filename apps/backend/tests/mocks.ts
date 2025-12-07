@@ -1,5 +1,6 @@
 import { Elysia } from "elysia";
 
+import { createAdventureController } from "@acme/backend/controllers/adventure.controller";
 import { createAuthController } from "@acme/backend/controllers/auth.controller";
 import { createPlannerController } from "@acme/backend/controllers/planner.controller";
 import { createUserController } from "@acme/backend/controllers/user.controller";
@@ -38,11 +39,28 @@ export class InMemoryUserRepository implements UserRepository {
   }
 }
 
-export const createTestApp = (users: InMemoryUserRepository) =>
-  new Elysia().use([
+export const createTestApp = (
+  users: InMemoryUserRepository,
+  opts?: { includeAdventure?: boolean },
+) => {
+  const controllers = [
     createAuthController({ users }),
     createUserController({ users }),
     createPlannerController({ users }),
+  ];
+
+  if (opts?.includeAdventure) {
+    controllers.push(createAdventureController({ users }));
+  }
+
+  return new Elysia().use(controllers);
+};
+
+export const createAdventureTestApp = (users: InMemoryUserRepository) =>
+  new Elysia().use([
+    createAuthController({ users }),
+    createUserController({ users }),
+    createAdventureController({ users }),
   ]);
 
 export const authJsonRequest = (path: string, body: unknown, cookie?: string) =>

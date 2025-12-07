@@ -2,12 +2,6 @@ import { describe, expect, it } from "bun:test";
 
 import { createPlannerService } from "@acme/backend/services/planner.service";
 
-const windowOf = (startIso: string, minutes: number) => {
-  const start = new Date(startIso);
-  const end = new Date(start.getTime() + minutes * 60 * 1000);
-  return { start, end } as const;
-};
-
 describe("planner service", () => {
   it("prioritizes tasks by importance and effort", async () => {
     const planner = createPlannerService();
@@ -38,8 +32,6 @@ describe("planner service", () => {
 
   it("prioritizes lower effort when other factors equal", async () => {
     const planner = createPlannerService();
-    const now = new Date();
-    const window = windowOf(now.toISOString(), 30);
 
     const response = await planner.prioritizeTasks("u1", {
       tasks: [
@@ -49,7 +41,6 @@ describe("planner service", () => {
           title: "Heavy",
           importance: 3,
           effortMinutes: 300,
-          window,
         },
         {
           id: "light",
@@ -57,7 +48,6 @@ describe("planner service", () => {
           title: "Light",
           importance: 3,
           effortMinutes: 20,
-          window,
         },
       ],
     });
@@ -142,6 +132,20 @@ describe("planner service", () => {
     expect(response.tasks).toHaveLength(3);
   });
 
+  it("deletes todo and returns false on missing delete", async () => {
+    const planner = createPlannerService();
+    const userId = "u5";
+    const todo = await planner.createTodo(userId, {
+      title: "delete me",
+    });
+
+    const deleted = await planner.deleteTodo(userId, todo.id);
+    expect(deleted).toBe(true);
+
+    const deletedAgain = await planner.deleteTodo(userId, todo.id);
+    expect(deletedAgain).toBe(false);
+  });
+
   it("updates todo status and returns null when not found", async () => {
     const planner = createPlannerService();
     const userId = "u6";
@@ -208,5 +212,14 @@ describe("planner service", () => {
     const ids = feed.reports.map((r) => r.id);
     expect(ids).toContain(ownReport.id);
     expect(feed.reports.some((r) => r.taskType === "crazy")).toBe(true);
+  });
+
+  it("creates friend invite with default base url when env missing", async () => {
+    const original = process.env.APP_BASE_URL;
+    delete process.env.APP_BASE_URL;
+    const planner = createPlannerService();
+    const invite = await planner.createFriendInvite("u12");
+    expect(invite.url).toContain(invite.code);
+    process.env.APP_BASE_URL = original;
   });
 });

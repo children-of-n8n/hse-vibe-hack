@@ -1,34 +1,8 @@
 import { Elysia, type Static, t } from "elysia";
 
-export const plannerRangeQuerySchema = t.Object({
-  from: t.Optional(t.Date({ description: "Start of range (inclusive)" })),
-  to: t.Optional(t.Date({ description: "End of range (inclusive)" })),
-});
-
-export type PlannerRangeQuery = Static<typeof plannerRangeQuerySchema>;
-
-export const plannerReminderSchema = t.Object({
-  minutesBefore: t.Integer({
-    minimum: 0,
-    default: 30,
-    description: "How many minutes before start to remind",
-  }),
-});
-
-export type PlannerReminder = Static<typeof plannerReminderSchema>;
-
-export const plannerTimeWindowSchema = t.Object({
-  start: t.Date({ description: "UTC start" }),
-  end: t.Date({ description: "UTC end" }),
-});
-
-export type PlannerTimeWindow = Static<typeof plannerTimeWindowSchema>;
-
 export const plannerTodoInputSchema = t.Object({
   title: t.String({ minLength: 1, maxLength: 120 }),
   description: t.Optional(t.String({ maxLength: 1024 })),
-  due: t.Optional(plannerTimeWindowSchema),
-  reminder: t.Optional(plannerReminderSchema),
   tags: t.Optional(t.Array(t.String({ maxLength: 32 }))),
 });
 
@@ -38,8 +12,6 @@ export const plannerTodoSchema = t.Object({
   id: t.String({ format: "uuid" }),
   title: plannerTodoInputSchema.properties.title,
   description: plannerTodoInputSchema.properties.description,
-  due: plannerTodoInputSchema.properties.due,
-  reminder: plannerTodoInputSchema.properties.reminder,
   tags: plannerTodoInputSchema.properties.tags,
   status: t.Union([
     t.Literal("pending"),
@@ -69,7 +41,6 @@ export const plannerRandomTaskRequestSchema = t.Object({
   count: t.Optional(t.Integer({ minimum: 1, maximum: 10, default: 3 })),
   mood: t.Optional(t.String({ maxLength: 64 })),
   focus: t.Optional(t.Array(t.String({ maxLength: 64 }))),
-  range: t.Optional(plannerTimeWindowSchema),
 });
 
 export type PlannerRandomTaskRequest = Static<
@@ -81,7 +52,6 @@ export const plannerRandomTaskSchema = t.Object({
   description: t.Optional(t.String({ maxLength: 512 })),
   durationMinutes: t.Optional(t.Integer({ minimum: 5, maximum: 480 })),
   category: t.Optional(t.String({ maxLength: 64 })),
-  suggestedWindow: t.Optional(plannerTimeWindowSchema),
 });
 
 export type PlannerRandomTask = Static<typeof plannerRandomTaskSchema>;
@@ -105,7 +75,6 @@ const plannerPrioritizeTaskSchema = t.Object({
   type: t.Union([t.Literal("todo"), t.Literal("crazy")]),
   title: t.String({ minLength: 1, maxLength: 120 }),
   description: t.Optional(t.String({ maxLength: 512 })),
-  window: t.Optional(plannerTimeWindowSchema),
   effortMinutes: t.Optional(t.Integer({ minimum: 5, maximum: 480 })),
   importance: t.Optional(t.Integer({ minimum: 1, maximum: 5 })),
 });
@@ -249,9 +218,6 @@ export type PlannerFeedResponse = Static<typeof plannerFeedResponseSchema>;
 
 export const plannerContracts = new Elysia({ name: "planner-contracts" }).model(
   {
-    PlannerRangeQuery: plannerRangeQuerySchema,
-    PlannerReminder: plannerReminderSchema,
-    PlannerTimeWindow: plannerTimeWindowSchema,
     PlannerTodoInput: plannerTodoInputSchema,
     PlannerTodo: plannerTodoSchema,
     PlannerTodoUpdateBody: plannerTodoUpdateSchema,
