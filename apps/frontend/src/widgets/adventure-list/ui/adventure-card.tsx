@@ -6,7 +6,6 @@ import { toast } from "sonner";
 import type { AdventureWithMedia } from "@acme/backend/controllers/contracts/adventure.schemas";
 
 import { api } from "@acme/frontend/shared/config/api";
-import { Button } from "@acme/frontend/shared/ui/button";
 
 interface AdventureCardProps {
   isOwn?: boolean;
@@ -325,7 +324,7 @@ export const AdventureCard = ({
 
         {/* Bottom actions */}
         <div className="mt-auto flex flex-col items-center gap-4">
-          <div className="flex items-center gap-3">
+          {/*<div className="flex items-center gap-3">
             {["🔥", "❤️", "😍", "😂", "🤔"].map((emoji) => {
               // Подсчитываем количество реакций с этим эмодзи
               const count = (adventure?.reactions || []).filter(
@@ -350,7 +349,7 @@ export const AdventureCard = ({
                 </div>
               );
             })}
-          </div>
+          </div>*/}
         </div>
       </div>
       {/* Scroll indicator */}
