@@ -5,13 +5,17 @@ import { createPlannerService } from "@acme/backend/services/planner.service";
 
 import type {
   PlannerCrazyTaskRequest,
+  PlannerCrazyTaskStatus,
   PlannerFriendInviteAccept,
+  PlannerPhotoReportInput,
   PlannerPrioritizeRequest,
 } from "./contracts/planner.schemas";
 import {
   plannerContracts,
   plannerEventSchema,
+  plannerFeedResponseSchema,
   plannerHabitSchema,
+  plannerPhotoReportSchema,
   plannerPlanPageResponseSchema,
   plannerPrioritizeResponseSchema,
   plannerProfileSchema,
@@ -411,6 +415,58 @@ export const createPlannerController = (deps: { users: UserRepository }) => {
               description: "LLM-inspired dare with XP reward",
             },
           },
-        ),
+        )
+        .patch(
+          "/crazy-task/:id/status",
+          async ({ currentUser, params, body, set }) => {
+            const updated = await planner.updateCrazyTaskStatus(
+              currentUser.id,
+              params.id,
+              (body as PlannerCrazyTaskStatus).status,
+            );
+
+            if (!updated) {
+              set.status = "Not Found";
+              return;
+            }
+
+            return updated;
+          },
+          {
+            params: "PlannerIdParams",
+            body: "PlannerCrazyTaskStatus",
+            response: {
+              [StatusMap.OK]: "PlannerCrazyTask",
+              [StatusMap["Not Found"]]: t.Void(),
+            },
+            detail: {
+              summary: "Update crazy task status",
+              description: "Mark crazy task progress",
+            },
+          },
+        )
+        .post(
+          "/reports",
+          ({ currentUser, body }) =>
+            planner.addPhotoReport(
+              currentUser.id,
+              body as PlannerPhotoReportInput,
+            ),
+          {
+            body: "PlannerPhotoReportInput",
+            response: { [StatusMap.Created]: plannerPhotoReportSchema },
+            detail: {
+              summary: "Attach photo report",
+              description: "Upload link + caption for task",
+            },
+          },
+        )
+        .get("/feed", ({ currentUser }) => planner.getFeed(currentUser.id), {
+          response: { [StatusMap.OK]: plannerFeedResponseSchema },
+          detail: {
+            summary: "Friends feed",
+            description: "Photo reports from friends and self",
+          },
+        }),
     );
 };

@@ -245,9 +245,9 @@ describe("planner service", () => {
     });
 
     const updated = await planner.updateTodo(userId, todo.id, {
-      status: "completed",
+      status: "in_progress",
     });
-    expect(updated?.status).toBe("completed");
+    expect(updated?.status).toBe("in_progress");
 
     const missing = await planner.updateTodo(userId, "missing", {
       status: "completed",
@@ -305,5 +305,55 @@ describe("planner service", () => {
       expect(item.window.start).toBeInstanceOf(Date);
       expect(item.window.end).toBeInstanceOf(Date);
     });
+  });
+
+  it("updates crazy task status and returns null when missing", async () => {
+    const planner = createPlannerService();
+    const userId = "u10";
+    const crazy = await planner.generateCrazyTask(userId, {
+      mood: "wild",
+    });
+
+    const updated = await planner.updateCrazyTaskStatus(
+      userId,
+      crazy.task.id,
+      "in_progress",
+    );
+    expect(updated?.status).toBe("in_progress");
+
+    const missing = await planner.updateCrazyTaskStatus(
+      userId,
+      "missing",
+      "completed",
+    );
+    expect(missing).toBeNull();
+  });
+
+  it("creates photo report and returns feed merged with friends", async () => {
+    const planner = createPlannerService();
+    const userId = "u11";
+    const invite = await planner.createFriendInvite(userId);
+    const friend = await planner.acceptFriendInvite(userId, invite.code);
+    if (!friend) throw new Error("Friend expected");
+
+    const ownReport = await planner.addPhotoReport(userId, {
+      taskId: "task-own",
+      taskType: "todo",
+      imageUrl: "https://img/own.jpg",
+      caption: "done",
+    });
+
+    await planner.addPhotoReport(friend.id, {
+      taskId: "task-friend",
+      taskType: "crazy",
+      imageUrl: "https://img/friend.jpg",
+      caption: "lol",
+    });
+
+    const feed = await planner.getFeed(userId);
+    expect(feed.reports.length).toBeGreaterThanOrEqual(2);
+    const ids = feed.reports.map((r) => r.id);
+    expect(ids).toContain(ownReport.id);
+    expect(feed.reports.some((r) => r.taskType === "crazy")).toBe(true);
   });
 });

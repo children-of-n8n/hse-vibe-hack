@@ -4,15 +4,19 @@ import type {
   PlannerCrazyTask,
   PlannerCrazyTaskRequest,
   PlannerCrazyTaskResponse,
+  PlannerCrazyTaskStatus,
   PlannerEvent,
   PlannerEventInput,
   PlannerEventUpdate,
+  PlannerFeedResponse,
   PlannerFriend,
   PlannerFriendInvite,
   PlannerHabit,
   PlannerHabitInput,
   PlannerHabitUpdate,
   PlannerOverviewResponse,
+  PlannerPhotoReport,
+  PlannerPhotoReportInput,
   PlannerPlanItem,
   PlannerPlanPageResponse,
   PlannerPrioritizeRequest,
@@ -37,6 +41,8 @@ type PlannerState = {
   profile: PlannerProfile;
   friends: PlannerFriend[];
   invites: PlannerFriendInvite[];
+  crazyTasks: PlannerCrazyTask[];
+  photoReports: PlannerPhotoReport[];
 };
 
 const DEFAULT_PROFILE: PlannerProfile = {
@@ -171,11 +177,16 @@ export const createPlannerService = () => {
       profile: { ...DEFAULT_PROFILE },
       friends: [],
       invites: [],
+      crazyTasks: [],
+      photoReports: [],
     };
 
     store.set(userId, initial);
     return initial;
   };
+
+  const getStateMaybe = (userId: string): PlannerState | undefined =>
+    store.get(userId);
 
   const listEvents = async (
     userId: string,
@@ -598,6 +609,39 @@ export const createPlannerService = () => {
     return state.friends;
   };
 
+  const addPhotoReport = async (
+    userId: string,
+    input: PlannerPhotoReportInput,
+  ): Promise<PlannerPhotoReport> => {
+    const state = getState(userId);
+    const report: PlannerPhotoReport = {
+      id: randomUUID(),
+      authorId: userId,
+      taskId: input.taskId,
+      taskType: input.taskType,
+      imageUrl: input.imageUrl,
+      caption: input.caption,
+      createdAt: new Date(),
+    };
+
+    state.photoReports.push(report);
+    return report;
+  };
+
+  const getFeed = async (userId: string): Promise<PlannerFeedResponse> => {
+    const state = getState(userId);
+    const friendIds = state.friends.map((friend) => friend.id);
+    const collectReports = (ownerId: string) =>
+      getStateMaybe(ownerId)?.photoReports ?? [];
+
+    const reports = [
+      ...collectReports(userId),
+      ...friendIds.flatMap((id) => collectReports(id)),
+    ].sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+    return { reports };
+  };
+
   const generateCrazyTask = async (
     userId: string,
     request: PlannerCrazyTaskRequest,
@@ -617,15 +661,31 @@ export const createPlannerService = () => {
       : "Стартуем ночью за 4 км и берем сок по пути";
 
     const task: PlannerCrazyTask = {
+      id: randomUUID(),
       title,
       description,
       rewardXp,
       friends: targetFriends.map((friend) => friend.id),
       promptUsed:
         request.mood ?? "late-night adventurous juice run with friends",
+      status: "pending",
     };
 
+    state.crazyTasks.push(task);
     return { task };
+  };
+
+  const updateCrazyTaskStatus = async (
+    userId: string,
+    taskId: string,
+    status: PlannerCrazyTaskStatus["status"],
+  ): Promise<PlannerCrazyTask | null> => {
+    const state = getState(userId);
+    const index = state.crazyTasks.findIndex((task) => task.id === taskId);
+    if (index === -1) return null;
+
+    state.crazyTasks[index] = { ...state.crazyTasks[index], status };
+    return state.crazyTasks[index];
   };
 
   return {
@@ -652,5 +712,8 @@ export const createPlannerService = () => {
     acceptFriendInvite,
     listFriends,
     generateCrazyTask,
+    updateCrazyTaskStatus,
+    addPhotoReport,
+    getFeed,
   };
 };

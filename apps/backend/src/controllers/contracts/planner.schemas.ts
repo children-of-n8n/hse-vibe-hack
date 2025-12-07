@@ -108,7 +108,11 @@ export const plannerTodoSchema = t.Object({
   sourceEventIds: plannerTodoInputSchema.properties.sourceEventIds,
   promotesHabit: plannerTodoInputSchema.properties.promotesHabit,
   tags: plannerTodoInputSchema.properties.tags,
-  status: t.Union([t.Literal("pending"), t.Literal("completed")]),
+  status: t.Union([
+    t.Literal("pending"),
+    t.Literal("in_progress"),
+    t.Literal("completed"),
+  ]),
 });
 
 export type PlannerTodo = Static<typeof plannerTodoSchema>;
@@ -116,7 +120,13 @@ export type PlannerTodo = Static<typeof plannerTodoSchema>;
 export const plannerTodoUpdateSchema = t.Intersect([
   t.Partial(plannerTodoInputSchema),
   t.Object({
-    status: t.Optional(t.Union([t.Literal("pending"), t.Literal("completed")])),
+    status: t.Optional(
+      t.Union([
+        t.Literal("pending"),
+        t.Literal("in_progress"),
+        t.Literal("completed"),
+      ]),
+    ),
   }),
 ]);
 
@@ -188,6 +198,7 @@ export const plannerPlanItemSchema = t.Object({
   status: t.Optional(
     t.Union([
       t.Literal("pending"),
+      t.Literal("in_progress"),
       t.Literal("completed"),
       t.Literal("skipped"),
     ]),
@@ -346,11 +357,17 @@ export type PlannerCrazyTaskRequest = Static<
 >;
 
 export const plannerCrazyTaskSchema = t.Object({
+  id: t.String({ format: "uuid" }),
   title: t.String({ minLength: 1, maxLength: 160 }),
   description: t.String({ minLength: 1, maxLength: 512 }),
   rewardXp: t.Integer({ minimum: 10, maximum: 1000 }),
   friends: t.Array(t.String({ format: "uuid" })),
   promptUsed: t.String({ maxLength: 256 }),
+  status: t.Union([
+    t.Literal("pending"),
+    t.Literal("in_progress"),
+    t.Literal("completed"),
+  ]),
 });
 
 export type PlannerCrazyTask = Static<typeof plannerCrazyTaskSchema>;
@@ -362,6 +379,52 @@ export const plannerCrazyTaskResponseSchema = t.Object({
 export type PlannerCrazyTaskResponse = Static<
   typeof plannerCrazyTaskResponseSchema
 >;
+
+export const plannerCrazyTaskStatusSchema = t.Object({
+  status: t.Union([
+    t.Literal("pending"),
+    t.Literal("in_progress"),
+    t.Literal("completed"),
+  ]),
+});
+
+export type PlannerCrazyTaskStatus = Static<
+  typeof plannerCrazyTaskStatusSchema
+>;
+
+export const plannerPhotoReportInputSchema = t.Object({
+  taskId: t.String({ format: "uuid" }),
+  taskType: t.Union([
+    t.Literal("event"),
+    t.Literal("todo"),
+    t.Literal("habit"),
+    t.Literal("crazy"),
+  ]),
+  imageUrl: t.String({ format: "uri", maxLength: 512 }),
+  caption: t.Optional(t.String({ maxLength: 280 })),
+});
+
+export type PlannerPhotoReportInput = Static<
+  typeof plannerPhotoReportInputSchema
+>;
+
+export const plannerPhotoReportSchema = t.Object({
+  id: t.String({ format: "uuid" }),
+  authorId: t.String({ format: "uuid" }),
+  taskId: plannerPhotoReportInputSchema.properties.taskId,
+  taskType: plannerPhotoReportInputSchema.properties.taskType,
+  imageUrl: plannerPhotoReportInputSchema.properties.imageUrl,
+  caption: plannerPhotoReportInputSchema.properties.caption,
+  createdAt: t.Date(),
+});
+
+export type PlannerPhotoReport = Static<typeof plannerPhotoReportSchema>;
+
+export const plannerFeedResponseSchema = t.Object({
+  reports: t.Array(plannerPhotoReportSchema),
+});
+
+export type PlannerFeedResponse = Static<typeof plannerFeedResponseSchema>;
 
 export const plannerCalendarExportSchema = t.String({
   description: "Generated iCalendar content",
@@ -401,5 +464,9 @@ export const plannerContracts = new Elysia({ name: "planner-contracts" }).model(
     PlannerCrazyTaskRequest: plannerCrazyTaskRequestSchema,
     PlannerCrazyTask: plannerCrazyTaskSchema,
     PlannerCrazyTaskResponse: plannerCrazyTaskResponseSchema,
+    PlannerCrazyTaskStatus: plannerCrazyTaskStatusSchema,
+    PlannerPhotoReportInput: plannerPhotoReportInputSchema,
+    PlannerPhotoReport: plannerPhotoReportSchema,
+    PlannerFeedResponse: plannerFeedResponseSchema,
   },
 );
