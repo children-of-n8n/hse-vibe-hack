@@ -143,12 +143,6 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
-        "photo_id": {
-          "name": "photo_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
         "user_id": {
           "name": "user_id",
           "type": "uuid",
@@ -167,24 +161,30 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
+        },
+        "adventure_id": {
+          "name": "adventure_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
         }
       },
       "indexes": {},
       "foreignKeys": {
-        "adventure_reactions_photo_id_adventure_photos_id_fk": {
-          "name": "adventure_reactions_photo_id_adventure_photos_id_fk",
-          "tableFrom": "adventure_reactions",
-          "tableTo": "adventure_photos",
-          "columnsFrom": ["photo_id"],
-          "columnsTo": ["id"],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
         "adventure_reactions_user_id_users_id_fk": {
           "name": "adventure_reactions_user_id_users_id_fk",
           "tableFrom": "adventure_reactions",
           "tableTo": "users",
           "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "adventure_reactions_adventure_id_adventures_id_fk": {
+          "name": "adventure_reactions_adventure_id_adventures_id_fk",
+          "tableFrom": "adventure_reactions",
+          "tableTo": "adventures",
+          "columnsFrom": ["adventure_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"

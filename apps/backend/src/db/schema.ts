@@ -160,9 +160,9 @@ export const adventurePhotos = pgTable("adventure_photos", {
 
 export const adventureReactions = pgTable("adventure_reactions", {
   id: uuid("id").primaryKey().defaultRandom(),
-  photoId: uuid("photo_id")
+  adventureId: uuid("adventure_id")
     .notNull()
-    .references(() => adventurePhotos.id, { onDelete: "cascade" }),
+    .references(() => adventures.id, { onDelete: "cascade" }),
   userId: uuid("user_id")
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
