@@ -14,6 +14,8 @@ import "./index.css";
 
 import { CreateAdventure } from "@acme/frontend/pages/create-adventure";
 
+import { JoinPage } from "../pages/join";
+
 const rootElement = document.getElementById("root");
 
 if (!rootElement) {
@@ -30,6 +32,7 @@ const app = (
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/create" element={<CreateAdventure />} />
+            <Route path="/join/:shareToken" element={<JoinPage />} />
           </Routes>
         </BrowserRouter>
       </QueryClientProvider>

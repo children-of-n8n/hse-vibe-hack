@@ -35,7 +35,11 @@ export function HomePage() {
         <CurrentUserMenu currentUser={currentUser} />
       </div>
 
-      <AdventureList adventures={adventures} onAdd={() => {}} />
+      <AdventureList
+        adventures={adventures}
+        currentUserId={currentUser.id}
+        onAdd={() => {}}
+      />
 
       <BackToTopButton />
     </div>
