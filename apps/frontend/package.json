@@ -6,7 +6,7 @@
     "build": "tsc -b && vite build",
     "check": "biome check",
     "clean": "rm -rf dist node_modules",
-    "dev": "bun run ./scripts/serve.ts",
+    "dev": "vite",
     "format": "biome format --write",
     "lint": "biome lint",
     "start": "NODE_ENV=production bun ./scripts/serve.ts",

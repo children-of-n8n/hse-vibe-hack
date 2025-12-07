@@ -7,6 +7,10 @@ import { defineConfig } from "vite";
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   root: path.resolve(__dirname, "src/app"),
+  build: {
+    outDir: "../../dist",
+    emptyOutDir: true,
+  },
   resolve: {
     alias: {
       "@acme/frontend": path.resolve(__dirname, "./src"),
