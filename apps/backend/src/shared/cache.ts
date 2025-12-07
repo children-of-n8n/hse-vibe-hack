@@ -36,7 +36,12 @@ export const createInMemoryCache = (): CacheClient => {
 };
 
 export const createRedisCache = (url: string): CacheClient => {
-  const client = new Redis(url);
+  const client = new Redis(url, {
+    retryStrategy: () => null, // disable infinite retries in tests
+  });
+  client.on("error", (error) => {
+    console.warn("[cache] redis error", error?.message);
+  });
 
   return {
     async get<T>(key: string) {
@@ -64,7 +69,8 @@ export const createRedisCache = (url: string): CacheClient => {
 };
 
 export const createCacheFromEnv = (): CacheClient => {
-  if (process.env.REDIS_URL) {
+  const isTest = process.env.NODE_ENV === "test";
+  if (process.env.REDIS_URL && !isTest) {
     return createRedisCache(process.env.REDIS_URL);
   }
   return createInMemoryCache();

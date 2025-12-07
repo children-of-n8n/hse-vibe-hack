@@ -132,6 +132,20 @@ describe("planner service", () => {
     expect(response.tasks).toHaveLength(3);
   });
 
+  it("deletes todo and returns false on missing delete", async () => {
+    const planner = createPlannerService();
+    const userId = "u5";
+    const todo = await planner.createTodo(userId, {
+      title: "delete me",
+    });
+
+    const deleted = await planner.deleteTodo(userId, todo.id);
+    expect(deleted).toBe(true);
+
+    const deletedAgain = await planner.deleteTodo(userId, todo.id);
+    expect(deletedAgain).toBe(false);
+  });
+
   it("updates todo status and returns null when not found", async () => {
     const planner = createPlannerService();
     const userId = "u6";
@@ -198,5 +212,14 @@ describe("planner service", () => {
     const ids = feed.reports.map((r) => r.id);
     expect(ids).toContain(ownReport.id);
     expect(feed.reports.some((r) => r.taskType === "crazy")).toBe(true);
+  });
+
+  it("creates friend invite with default base url when env missing", async () => {
+    const original = process.env.APP_BASE_URL;
+    delete process.env.APP_BASE_URL;
+    const planner = createPlannerService();
+    const invite = await planner.createFriendInvite("u12");
+    expect(invite.url).toContain(invite.code);
+    process.env.APP_BASE_URL = original;
   });
 });

@@ -109,4 +109,13 @@ describe("adventure service", () => {
     const reactionsAfterDelete = await service.listReactions(photo?.id ?? "");
     expect(reactionsAfterDelete).toBeNull();
   });
+
+  it("returns null for missing adventure lookups", async () => {
+    const users = new InMemoryUserRepository();
+    const service = createAdventureService({ users });
+
+    expect(await service.getById("missing")).toBeNull();
+    expect(await service.listParticipants("missing")).toBeNull();
+    expect(await service.listPhotos("missing")).toBeNull();
+  });
 });
