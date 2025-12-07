@@ -7,6 +7,7 @@ import { HomePage } from "@acme/frontend/pages/home";
 import { LoginPage } from "@acme/frontend/pages/login";
 import { RegisterPage } from "@acme/frontend/pages/register";
 import { queryClient } from "@acme/frontend/shared/config/query";
+import { Toaster } from "@acme/frontend/shared/ui/sonner";
 import { ThemeProvider } from "@acme/frontend/shared/ui/theme-provider";
 
 import "./index.css";
@@ -29,6 +30,7 @@ const app = (
           </Routes>
         </BrowserRouter>
       </QueryClientProvider>
+      <Toaster />
     </ThemeProvider>
   </StrictMode>
 );

@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
+import { toast } from "sonner";
 
 import { usersMeQueryOptions } from "@acme/frontend/entities/user";
 import type { LoginFormSchemaValues } from "@acme/frontend/features/login";
@@ -11,13 +12,19 @@ export const useRegisterMutation = () => {
 
   return useMutation({
     mutationFn: async (values: LoginFormSchemaValues) => {
-      await api.auth.register.post(values);
+      const { error } = await api.auth.register.post(values);
 
-      await queryClient.invalidateQueries({
-        queryKey: usersMeQueryOptions.queryKey,
-      });
+      if (error) {
+        if (error.status === 409) {
+          toast.error("Такой пользователь уже существует");
+        }
+      } else {
+        await queryClient.invalidateQueries({
+          queryKey: usersMeQueryOptions.queryKey,
+        });
 
-      await navigate("/");
+        await navigate("/");
+      }
     },
   });
 };
