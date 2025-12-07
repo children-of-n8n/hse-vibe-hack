@@ -11,6 +11,7 @@ export const useLoginMutation = () => {
   const navigate = useNavigate();
 
   return useMutation({
+    mutationKey: ["login"],
     mutationFn: async (values: LoginFormSchemaValues) => {
       const { error } = await api.auth.login.post(values);
 

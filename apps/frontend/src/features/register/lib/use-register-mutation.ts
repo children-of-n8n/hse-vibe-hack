@@ -11,6 +11,7 @@ export const useRegisterMutation = () => {
   const navigate = useNavigate();
 
   return useMutation({
+    mutationKey: ["register"],
     mutationFn: async (values: LoginFormSchemaValues) => {
       const { error } = await api.auth.register.post(values);
 
