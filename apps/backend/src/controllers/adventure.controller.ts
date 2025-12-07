@@ -54,8 +54,6 @@ export const createAdventureController = (deps: {
     description:
       "Идея: Ночное приключение. Компания: alice, bob. Будет весело и запомнится.",
     status: "upcoming",
-    summary:
-      'Они завершили "Ночное приключение": alice, bob. Итог: прогулка по набережной...',
     shareToken: "ADV-example",
     participants: [
       { id: "22222222-2222-2222-2222-222222222222", username: "alice" },

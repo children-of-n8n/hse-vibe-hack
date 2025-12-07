@@ -61,7 +61,10 @@ export const adventureUpdateSchema = t.Partial(
   t.Object({
     title: adventureSchema.properties.title,
     description: adventureSchema.properties.description,
-    summary: adventureSchema.properties.summary,
+    summary: t.String({
+      maxLength: 512,
+      description: "AI-generated recap after completion",
+    }),
     startsAt: adventureSchema.properties.startsAt,
   }),
 );

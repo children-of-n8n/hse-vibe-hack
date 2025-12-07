@@ -90,7 +90,7 @@ export const createAdventureService = (deps: {
       title: input.title,
       description,
       status: "upcoming",
-      summary: null,
+      summary: "",
       shareToken: buildShareToken(),
       creator,
       participants: [creator, ...friendParticipants],
