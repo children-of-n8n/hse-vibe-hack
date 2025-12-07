@@ -3,18 +3,33 @@ import { Elysia, StatusMap, t } from "elysia";
 import type { UserRepository } from "@acme/backend/domain/users/user.repository";
 import { createAdventureService } from "@acme/backend/services/adventure.service";
 
+import type {
+  Adventure,
+  AdventureWithMedia,
+} from "./contracts/adventure.schemas";
 import {
   adventureContracts,
   adventureParticipantSchema,
   adventurePhotoSchema,
   adventurePhotoUploadResponseSchema,
+  adventurePhotoWithReactionsSchema,
   adventureReactionSchema,
   adventureSchema,
+  adventureWithMediaSchema,
 } from "./contracts/adventure.schemas";
 import { createCurrentUserMacro } from "./macros/current-user";
 
 export const createAdventureController = (deps: { users: UserRepository }) => {
   const service = createAdventureService(deps);
+  const enrichWithMedia = async (
+    adventures: Adventure[],
+  ): Promise<AdventureWithMedia[]> =>
+    Promise.all(
+      adventures.map(async (adventure) => {
+        const photos = await service.listPhotosWithReactions(adventure.id);
+        return { ...adventure, photos: photos ?? [] };
+      }),
+    );
 
   return new Elysia({
     name: "adventure-controller",
@@ -43,34 +58,38 @@ export const createAdventureController = (deps: { users: UserRepository }) => {
         .get(
           "/upcoming",
           async ({ currentUser }) => ({
-            adventures: await service.listByStatus(currentUser.id, "upcoming"),
+            adventures: await enrichWithMedia(
+              await service.listByStatus(currentUser.id, "upcoming"),
+            ),
           }),
           {
             response: {
               [StatusMap.OK]: t.Object({
-                adventures: t.Array(adventureSchema),
+                adventures: t.Array(adventureWithMediaSchema),
               }),
             },
             detail: {
               summary: "List upcoming adventures",
-              description: "Предстоящие приключения.",
+              description: "Предстоящие приключения с фото и реакциями.",
             },
           },
         )
         .get(
           "/completed",
           async ({ currentUser }) => ({
-            adventures: await service.listByStatus(currentUser.id, "completed"),
+            adventures: await enrichWithMedia(
+              await service.listByStatus(currentUser.id, "completed"),
+            ),
           }),
           {
             response: {
               [StatusMap.OK]: t.Object({
-                adventures: t.Array(adventureSchema),
+                adventures: t.Array(adventureWithMediaSchema),
               }),
             },
             detail: {
               summary: "List completed adventures",
-              description: "Завершённые приключения.",
+              description: "Завершённые приключения с фото и реакциями.",
             },
           },
         )
@@ -82,12 +101,13 @@ export const createAdventureController = (deps: { users: UserRepository }) => {
               set.status = "Not Found";
               return;
             }
-            return { adventure };
+            const full = (await enrichWithMedia([adventure]))[0];
+            return { adventure: full };
           },
           {
             params: t.Object({ id: t.String({ format: "uuid" }) }),
             response: {
-              [StatusMap.OK]: t.Object({ adventure: adventureSchema }),
+              [StatusMap.OK]: t.Object({ adventure: adventureWithMediaSchema }),
               [StatusMap["Not Found"]]: t.Void(),
             },
             detail: {
@@ -311,8 +331,8 @@ export const createAdventureController = (deps: { users: UserRepository }) => {
         .get(
           "/:id/photos",
           async ({ params, set }) => {
-            const photos = await service.listPhotos(params.id);
-            if (!photos) {
+            const photos = await service.listPhotosWithReactions(params.id);
+            if (photos === null) {
               set.status = "Not Found";
               return;
             }
@@ -322,7 +342,7 @@ export const createAdventureController = (deps: { users: UserRepository }) => {
             params: t.Object({ id: t.String({ format: "uuid" }) }),
             response: {
               [StatusMap.OK]: t.Object({
-                photos: t.Array(adventurePhotoSchema),
+                photos: t.Array(adventurePhotoWithReactionsSchema),
               }),
               [StatusMap["Not Found"]]: t.Void(),
             },

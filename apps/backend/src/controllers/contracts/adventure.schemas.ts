@@ -80,6 +80,36 @@ export const adventurePhotoSchema = t.Object({
 
 export type AdventurePhoto = Static<typeof adventurePhotoSchema>;
 
+export const adventureReactionSchema = t.Object({
+  id: t.String({ format: "uuid" }),
+  photoId: adventurePhotoSchema.properties.id,
+  userId: adventureParticipantSchema.properties.id,
+  emoji: t.String({ minLength: 1, maxLength: 8 }),
+  createdAt: t.Date(),
+});
+
+export type AdventureReaction = Static<typeof adventureReactionSchema>;
+
+export const adventurePhotoWithReactionsSchema = t.Intersect([
+  adventurePhotoSchema,
+  t.Object({
+    reactions: t.Array(adventureReactionSchema),
+  }),
+]);
+
+export type AdventurePhotoWithReactions = Static<
+  typeof adventurePhotoWithReactionsSchema
+>;
+
+export const adventureWithMediaSchema = t.Intersect([
+  adventureSchema,
+  t.Object({
+    photos: t.Array(adventurePhotoWithReactionsSchema, { default: [] }),
+  }),
+]);
+
+export type AdventureWithMedia = Static<typeof adventureWithMediaSchema>;
+
 export const adventurePhotoUploadRequestSchema = t.Object({
   filename: t.String({ minLength: 1, maxLength: 256 }),
   contentType: t.Optional(t.String({ maxLength: 128 })),
@@ -107,16 +137,6 @@ export const adventurePhotoConfirmSchema = t.Object({
 
 export type AdventurePhotoConfirm = Static<typeof adventurePhotoConfirmSchema>;
 
-export const adventureReactionSchema = t.Object({
-  id: t.String({ format: "uuid" }),
-  photoId: adventurePhotoSchema.properties.id,
-  userId: adventureParticipantSchema.properties.id,
-  emoji: t.String({ minLength: 1, maxLength: 8 }),
-  createdAt: t.Date(),
-});
-
-export type AdventureReaction = Static<typeof adventureReactionSchema>;
-
 export const adventureReactionInputSchema = t.Object({
   emoji: adventureReactionSchema.properties.emoji,
 });
@@ -136,6 +156,8 @@ export const adventureContracts = new Elysia({
   AdventureShare: adventureShareSchema,
   AdventureJoin: adventureJoinSchema,
   AdventurePhoto: adventurePhotoSchema,
+  AdventurePhotoWithReactions: adventurePhotoWithReactionsSchema,
+  AdventureWithMedia: adventureWithMediaSchema,
   AdventureReaction: adventureReactionSchema,
   AdventureReactionInput: adventureReactionInputSchema,
   AdventurePhotoUploadRequest: adventurePhotoUploadRequestSchema,

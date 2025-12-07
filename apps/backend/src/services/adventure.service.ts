@@ -5,6 +5,7 @@ import type {
   AdventureCreate,
   AdventureParticipant,
   AdventurePhoto,
+  AdventurePhotoWithReactions,
   AdventureReaction,
   AdventureStatus,
 } from "@acme/backend/controllers/contracts/adventure.schemas";
@@ -223,6 +224,20 @@ export const createAdventureService = (deps: {
     );
   };
 
+  const listPhotosWithReactions = async (
+    adventureId: string,
+  ): Promise<AdventurePhotoWithReactions[] | null> => {
+    const photos = await listPhotos(adventureId);
+    if (!photos) return null;
+    const withReactions = await Promise.all(
+      photos.map(async (photo) => {
+        const reactions = (await listReactions(photo.id)) ?? [];
+        return { ...photo, reactions };
+      }),
+    );
+    return withReactions;
+  };
+
   const deletePhoto = async (
     adventureId: string,
     photoId: string,
@@ -330,6 +345,7 @@ export const createAdventureService = (deps: {
     removeReaction,
     listReactions,
     signPhotoUpload,
+    listPhotosWithReactions,
   };
 };
 
