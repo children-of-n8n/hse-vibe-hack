@@ -14,7 +14,7 @@ export function AdventureList({
 }) {
   return (
     <>
-      <AdventureListPlaceholder onAdd={onAdd} />
+      <AdventureListPlaceholder count={adventures?.length ?? 0} onAdd={onAdd} />
       {adventures?.map((adventure) => (
         <AdventureCard
           isOwn={adventure.creator.id === currentUserId}
