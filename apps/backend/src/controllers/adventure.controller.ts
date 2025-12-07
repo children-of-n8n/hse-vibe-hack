@@ -123,14 +123,6 @@ export const createAdventureController = (deps: {
             ),
           }),
           {
-            response: {
-              [StatusMap.OK]: t.Object(
-                {
-                  adventures: t.Array(adventureWithMediaSchema),
-                },
-                { examples: [{ adventures: [exampleAdventure] }] },
-              ),
-            },
             detail: {
               summary: "List upcoming adventures",
               description: "Предстоящие приключения с фото и реакциями.",
