@@ -23,7 +23,7 @@ export function BackToTopButton(props: React.ComponentProps<typeof Button>) {
     <Button
       size="icon"
       variant="outline"
-      className={`fixed right-4 bottom-4 rounded-full transition-opacity duration-300 ${
+      className={`fixed right-4 bottom-4 z-10 rounded-full transition-opacity duration-300 ${
         isVisible ? "opacity-100" : "pointer-events-none opacity-0"
       }`}
       onClick={() => {

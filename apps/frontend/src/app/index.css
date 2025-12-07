@@ -184,3 +184,88 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-snap-type: y mandatory;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-display);
+    overflow-x: hidden;
+  }
+}
+
+@layer components {
+  .adventure-card {
+    @apply relative w-full h-screen flex flex-col items-center justify-center;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+  }
+
+  .card-gradient {
+    background: var(--gradient-adventure);
+  }
+
+  .card-gradient-friend {
+    background: var(--gradient-friend);
+  }
+
+  .gradient-overlay {
+    background: var(--gradient-overlay);
+  }
+
+  .btn-primary {
+    background: var(--gradient-gold);
+    box-shadow: var(--shadow-button);
+    @apply text-background font-semibold px-8 py-4 rounded-full transition-all duration-300;
+  }
+
+  .btn-primary:hover {
+    @apply scale-105;
+    box-shadow: 0 12px 32px hsl(45 93% 58% / 0.4);
+  }
+
+  .btn-primary:active {
+    @apply scale-95;
+  }
+
+  .btn-secondary {
+    @apply bg-secondary text-foreground font-medium px-6 py-3 rounded-full border border-border/50 transition-all duration-300;
+  }
+
+  .btn-secondary:hover {
+    @apply bg-muted border-primary/30;
+  }
+
+  .avatar-stack {
+    @apply flex -space-x-3;
+  }
+
+  .avatar-item {
+    @apply w-10 h-10 rounded-full border-2 border-background bg-muted flex items-center justify-center text-sm font-medium;
+  }
+
+  .scroll-indicator {
+    @apply animate-bounce;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    background: var(--gradient-gold);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .glow {
+    box-shadow: var(--shadow-glow);
+  }
+}

@@ -20,8 +20,8 @@ export function HomePage() {
   }
 
   return (
-    <div className="relative flex min-h-dvh flex-col gap-4">
-      <div className="absolute top-4 right-4 left-4 flex justify-between">
+    <div className="min-h-screen">
+      <div className="fixed top-4 right-4 left-4 z-10 flex justify-between">
         <ThemeToggler />
         <CurrentUserMenu currentUser={currentUser} />
       </div>
