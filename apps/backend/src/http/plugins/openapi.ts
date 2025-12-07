@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import path from "node:path";
 
 import { openapi as createElysiaOpenapi, fromTypes } from "@elysiajs/openapi";
@@ -77,6 +78,24 @@ export const openapi = createElysiaOpenapi({
       },
     ],
   },
-  // Always resolve from current working directory so it works in dev and docker
-  references: fromTypes(path.resolve("src/index.ts")),
+  // Resolve source entry regardless of cwd (works in monorepo and docker)
+  references: (() => {
+    const candidates = [
+      path.resolve("src/index.ts"),
+      path.resolve(process.cwd(), "src/index.ts"),
+      path.resolve(process.cwd(), "apps/backend/src/index.ts"),
+      path.resolve(
+        path.dirname(new URL(import.meta.url).pathname),
+        "../index.ts",
+      ),
+    ];
+
+    const found = candidates.find((candidate) => fs.existsSync(candidate));
+    if (!found) {
+      console.warn("[openapi] Could not resolve src/index.ts for OpenAPI");
+      return undefined;
+    }
+
+    return fromTypes(found);
+  })(),
 });
