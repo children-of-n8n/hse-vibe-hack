@@ -68,15 +68,16 @@ export const AdventureCard = ({
           {/* Main content */}
           <div className="flex flex-1 flex-col items-center justify-center text-center">
             {/* Photo */}
-            <div className="relative mb-8 h-64 w-64 overflow-hidden rounded-3xl border-2 border-border/20 shadow-2xl">
-              <img
-                src={displayImage?.url}
-                alt={adventure.title}
-                className="h-full w-full object-cover"
-              />
-              {isCompleted && (
-                <div className="absolute top-3 right-3 rounded-full bg-green-500 p-2">
-                  <CheckCircle className="h-5 w-5 text-white" />
+            <div className="mb-8 h-64 w-64 overflow-hidden rounded-3xl border-2 border-border/20 shadow-2xl">
+              {adventure?.photos[0]?.url ? (
+                <img
+                  src={adventure.photos[0]?.url}
+                  alt={adventure.title}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center bg-secondary">
+                  <div className="h-20 w-20 rounded-2xl bg-muted/30" />
                 </div>
               )}
             </div>
@@ -157,19 +158,6 @@ export const AdventureCard = ({
         {/* Main content - centered */}
         <div className="flex flex-1 flex-col items-center justify-center text-center">
           {/* Adventure image */}
-          <div className="mb-8 h-64 w-64 overflow-hidden rounded-3xl border-2 border-border/20 shadow-2xl">
-            {adventure?.photos[0]?.url ? (
-              <img
-                src={adventure.photos[0]?.url}
-                alt={adventure.title}
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center bg-secondary">
-                <div className="h-20 w-20 rounded-2xl bg-muted/30" />
-              </div>
-            )}
-          </div>
 
           {/* Title */}
           <h2 className="mb-3 font-bold text-2xl">
