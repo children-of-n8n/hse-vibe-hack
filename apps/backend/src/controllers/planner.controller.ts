@@ -1,41 +1,24 @@
 import { Elysia, StatusMap, t } from "elysia";
 
-import type {
-  User,
-  UserRepository,
-} from "@acme/backend/domain/users/user.repository";
+import type { UserRepository } from "@acme/backend/domain/users/user.repository";
 import { createPlannerService } from "@acme/backend/services/planner.service";
 
+import type {
+  PlannerCrazyTaskRequest,
+  PlannerFriendInviteAccept,
+  PlannerPrioritizeRequest,
+} from "./contracts/planner.schemas";
 import {
   plannerContracts,
   plannerEventSchema,
   plannerHabitSchema,
   plannerPlanPageResponseSchema,
+  plannerPrioritizeResponseSchema,
   plannerProfileSchema,
   plannerRandomTaskResponseSchema,
   plannerTodoSchema,
 } from "./contracts/planner.schemas";
-import type {
-  PlannerEventInput,
-  PlannerEventUpdate,
-  PlannerHabitInput,
-  PlannerHabitUpdate,
-  PlannerIdParams,
-  PlannerProfileUpdate,
-  PlannerRangeQuery,
-  PlannerRandomTaskRequest,
-  PlannerTodoInput,
-  PlannerTodoUpdate,
-} from "./contracts/planner.schemas";
 import { createCurrentUserMacro } from "./macros/current-user";
-
-type StatusKey = keyof typeof StatusMap;
-type Authed<T> = { currentUser: User } & T;
-type RangeCtx = Authed<{ query: PlannerRangeQuery }>;
-type BodyCtx<T> = Authed<{ body: T }>;
-type ParamsCtx<T = object> = Authed<{ params: PlannerIdParams }> & T;
-type SetCtx = { set: any };
-type ParamsBodySetCtx<T> = ParamsCtx<{ body: T }> & SetCtx;
 
 export const createPlannerController = (deps: { users: UserRepository }) => {
   const planner = createPlannerService();
@@ -50,22 +33,20 @@ export const createPlannerController = (deps: { users: UserRepository }) => {
       app
         .get(
           "/overview",
-          ({ currentUser, query }: RangeCtx) =>
+          ({ currentUser, query }) =>
             planner.getOverview(currentUser.id, query),
           {
             query: "PlannerRangeQuery",
             response: { [StatusMap.OK]: "PlannerOverviewResponse" },
             detail: {
               summary: "Get events, todos, habits",
-              description:
-                "Returns planner data for the requested time window",
+              description: "Returns planner data for the requested time window",
             },
           },
         )
         .get(
           "/events",
-          ({ currentUser, query }: RangeCtx) =>
-            planner.listEvents(currentUser.id, query),
+          ({ currentUser, query }) => planner.listEvents(currentUser.id, query),
           {
             query: "PlannerRangeQuery",
             response: { [StatusMap.OK]: t.Array(plannerEventSchema) },
@@ -77,8 +58,7 @@ export const createPlannerController = (deps: { users: UserRepository }) => {
         )
         .post(
           "/events",
-          ({ currentUser, body }: BodyCtx<PlannerEventInput>) =>
-            planner.createEvent(currentUser.id, body),
+          ({ currentUser, body }) => planner.createEvent(currentUser.id, body),
           {
             body: "PlannerEventInput",
             response: { [StatusMap.Created]: plannerEventSchema },
@@ -90,7 +70,7 @@ export const createPlannerController = (deps: { users: UserRepository }) => {
         )
         .patch(
           "/events/:id",
-          async ({ currentUser, params, body, set }: ParamsBodySetCtx<PlannerEventUpdate>) => {
+          async ({ currentUser, params, body, set }) => {
             const updated = await planner.updateEvent(
               currentUser.id,
               params.id,
@@ -118,8 +98,11 @@ export const createPlannerController = (deps: { users: UserRepository }) => {
         )
         .delete(
           "/events/:id",
-          async ({ currentUser, params, set }: ParamsCtx<SetCtx>) => {
-            const deleted = await planner.deleteEvent(currentUser.id, params.id);
+          async ({ currentUser, params, set }) => {
+            const deleted = await planner.deleteEvent(
+              currentUser.id,
+              params.id,
+            );
             set.status = deleted ? "No Content" : "Not Found";
           },
           {
@@ -136,8 +119,7 @@ export const createPlannerController = (deps: { users: UserRepository }) => {
         )
         .get(
           "/todos",
-          ({ currentUser, query }: RangeCtx) =>
-            planner.listTodos(currentUser.id, query),
+          ({ currentUser, query }) => planner.listTodos(currentUser.id, query),
           {
             query: "PlannerRangeQuery",
             response: { [StatusMap.OK]: t.Array(plannerTodoSchema) },
@@ -149,8 +131,7 @@ export const createPlannerController = (deps: { users: UserRepository }) => {
         )
         .post(
           "/todos",
-          ({ currentUser, body }: BodyCtx<PlannerTodoInput>) =>
-            planner.createTodo(currentUser.id, body),
+          ({ currentUser, body }) => planner.createTodo(currentUser.id, body),
           {
             body: "PlannerTodoInput",
             response: { [StatusMap.Created]: plannerTodoSchema },
@@ -162,7 +143,7 @@ export const createPlannerController = (deps: { users: UserRepository }) => {
         )
         .patch(
           "/todos/:id",
-          async ({ currentUser, params, body, set }: ParamsBodySetCtx<PlannerTodoUpdate>) => {
+          async ({ currentUser, params, body, set }) => {
             const updated = await planner.updateTodo(
               currentUser.id,
               params.id,
@@ -190,7 +171,7 @@ export const createPlannerController = (deps: { users: UserRepository }) => {
         )
         .delete(
           "/todos/:id",
-          async ({ currentUser, params, set }: ParamsCtx<SetCtx>) => {
+          async ({ currentUser, params, set }) => {
             const deleted = await planner.deleteTodo(currentUser.id, params.id);
             set.status = deleted ? "No Content" : "Not Found";
           },
@@ -208,7 +189,7 @@ export const createPlannerController = (deps: { users: UserRepository }) => {
         )
         .get(
           "/habits",
-          ({ currentUser }: Authed<object>) => planner.listHabits(currentUser.id),
+          ({ currentUser }) => planner.listHabits(currentUser.id),
           {
             response: { [StatusMap.OK]: t.Array(plannerHabitSchema) },
             detail: {
@@ -219,8 +200,7 @@ export const createPlannerController = (deps: { users: UserRepository }) => {
         )
         .post(
           "/habits",
-          ({ currentUser, body }: BodyCtx<PlannerHabitInput>) =>
-            planner.createHabit(currentUser.id, body),
+          ({ currentUser, body }) => planner.createHabit(currentUser.id, body),
           {
             body: "PlannerHabitInput",
             response: { [StatusMap.Created]: plannerHabitSchema },
@@ -232,7 +212,7 @@ export const createPlannerController = (deps: { users: UserRepository }) => {
         )
         .patch(
           "/habits/:id",
-          async ({ currentUser, params, body, set }: ParamsBodySetCtx<PlannerHabitUpdate>) => {
+          async ({ currentUser, params, body, set }) => {
             const updated = await planner.updateHabit(
               currentUser.id,
               params.id,
@@ -260,8 +240,11 @@ export const createPlannerController = (deps: { users: UserRepository }) => {
         )
         .delete(
           "/habits/:id",
-          async ({ currentUser, params, set }: ParamsCtx<SetCtx>) => {
-            const deleted = await planner.deleteHabit(currentUser.id, params.id);
+          async ({ currentUser, params, set }) => {
+            const deleted = await planner.deleteHabit(
+              currentUser.id,
+              params.id,
+            );
             set.status = deleted ? "No Content" : "Not Found";
           },
           {
@@ -278,7 +261,7 @@ export const createPlannerController = (deps: { users: UserRepository }) => {
         )
         .get(
           "/plans",
-          ({ currentUser, query }: RangeCtx) =>
+          ({ currentUser, query }) =>
             planner.getPlanPage(currentUser.id, query),
           {
             query: "PlannerRangeQuery",
@@ -291,7 +274,7 @@ export const createPlannerController = (deps: { users: UserRepository }) => {
         )
         .get(
           "/profile",
-          ({ currentUser }: Authed<object>) => planner.getProfile(currentUser.id),
+          ({ currentUser }) => planner.getProfile(currentUser.id),
           {
             response: { [StatusMap.OK]: plannerProfileSchema },
             detail: {
@@ -303,7 +286,7 @@ export const createPlannerController = (deps: { users: UserRepository }) => {
         )
         .patch(
           "/profile",
-          ({ currentUser, body }: BodyCtx<PlannerProfileUpdate>) =>
+          ({ currentUser, body }) =>
             planner.updateProfile(currentUser.id, body),
           {
             body: "PlannerProfileUpdateBody",
@@ -316,7 +299,7 @@ export const createPlannerController = (deps: { users: UserRepository }) => {
         )
         .get(
           "/export/ics",
-          async ({ currentUser, query, set }: RangeCtx & SetCtx) => {
+          async ({ currentUser, query, set }) => {
             const payload = await planner.exportCalendar(currentUser.id, query);
             set.headers ??= {};
             set.headers["Content-Type"] = "text/calendar";
@@ -333,7 +316,7 @@ export const createPlannerController = (deps: { users: UserRepository }) => {
         )
         .post(
           "/random-tasks",
-          ({ currentUser, body }: BodyCtx<PlannerRandomTaskRequest>) =>
+          ({ currentUser, body }) =>
             planner.generateRandomTasks(currentUser.id, body),
           {
             body: "PlannerRandomTaskRequest",
@@ -341,6 +324,91 @@ export const createPlannerController = (deps: { users: UserRepository }) => {
             detail: {
               summary: "Generate fun tasks",
               description: "Lightweight AI-like planner suggestions",
+            },
+          },
+        )
+        .post(
+          "/prioritize",
+          ({ currentUser, body }) =>
+            planner.prioritizeTasks(
+              currentUser.id,
+              body as PlannerPrioritizeRequest,
+            ),
+          {
+            body: "PlannerPrioritizeRequest",
+            response: { [StatusMap.OK]: plannerPrioritizeResponseSchema },
+            detail: {
+              summary: "LLM prioritization stub",
+              description: "Orders tasks with LLM-style scores",
+            },
+          },
+        )
+        .post(
+          "/friends/invite",
+          ({ currentUser, set }) => {
+            set.status = "Created";
+            return planner.createFriendInvite(currentUser.id);
+          },
+          {
+            response: { [StatusMap.Created]: "PlannerFriendInvite" },
+            detail: {
+              summary: "Create invite link",
+              description: "Generate shareable friend invite code",
+            },
+          },
+        )
+        .post(
+          "/friends/accept",
+          async ({ currentUser, body, set }) => {
+            const friend = await planner.acceptFriendInvite(
+              currentUser.id,
+              (body as PlannerFriendInviteAccept).code,
+            );
+
+            if (!friend) {
+              set.status = "Not Found";
+              return;
+            }
+            return friend;
+          },
+          {
+            body: "PlannerFriendInviteAccept",
+            response: {
+              [StatusMap.OK]: "PlannerFriend",
+              [StatusMap["Not Found"]]: t.Void(),
+            },
+            detail: {
+              summary: "Accept invite",
+              description: "Attach friend by invite code",
+            },
+          },
+        )
+        .get(
+          "/friends",
+          async ({ currentUser }) => ({
+            friends: await planner.listFriends(currentUser.id),
+          }),
+          {
+            response: { [StatusMap.OK]: "PlannerFriendListResponse" },
+            detail: {
+              summary: "List friends",
+              description: "Friends added via invites",
+            },
+          },
+        )
+        .post(
+          "/crazy-task",
+          ({ currentUser, body }) =>
+            planner.generateCrazyTask(
+              currentUser.id,
+              body as PlannerCrazyTaskRequest,
+            ),
+          {
+            body: "PlannerCrazyTaskRequest",
+            response: { [StatusMap.OK]: "PlannerCrazyTaskResponse" },
+            detail: {
+              summary: "Generate crazy task",
+              description: "LLM-inspired dare with XP reward",
             },
           },
         ),

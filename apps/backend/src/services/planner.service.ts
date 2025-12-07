@@ -1,21 +1,28 @@
 import { randomUUID } from "node:crypto";
 
 import type {
+  PlannerCrazyTask,
+  PlannerCrazyTaskRequest,
+  PlannerCrazyTaskResponse,
   PlannerEvent,
   PlannerEventInput,
   PlannerEventUpdate,
+  PlannerFriend,
+  PlannerFriendInvite,
   PlannerHabit,
   PlannerHabitInput,
   PlannerHabitUpdate,
   PlannerOverviewResponse,
   PlannerPlanItem,
   PlannerPlanPageResponse,
+  PlannerPrioritizeRequest,
+  PlannerPrioritizeResponse,
   PlannerProfile,
   PlannerProfileUpdate,
-  PlannerRangeQuery,
   PlannerRandomTask,
   PlannerRandomTaskRequest,
   PlannerRandomTaskResponse,
+  PlannerRangeQuery,
   PlannerReminder,
   PlannerTimeWindow,
   PlannerTodo,
@@ -28,6 +35,8 @@ type PlannerState = {
   todos: PlannerTodo[];
   habits: PlannerHabit[];
   profile: PlannerProfile;
+  friends: PlannerFriend[];
+  invites: PlannerFriendInvite[];
 };
 
 const DEFAULT_PROFILE: PlannerProfile = {
@@ -126,16 +135,14 @@ const applyReminder = (
   fallback: PlannerReminder,
 ): PlannerReminder => reminder ?? fallback;
 
-const buildPlanItem = (
-  input: {
-    referenceId: string;
-    type: PlannerPlanItem["type"];
-    title: string;
-    window: PlannerTimeWindow;
-    status?: PlannerPlanItem["status"];
-    tags?: string[];
-  },
-): PlannerPlanItem => ({
+const buildPlanItem = (input: {
+  referenceId: string;
+  type: PlannerPlanItem["type"];
+  title: string;
+  window: PlannerTimeWindow;
+  status?: PlannerPlanItem["status"];
+  tags?: string[];
+}): PlannerPlanItem => ({
   id: randomUUID(),
   referenceId: input.referenceId,
   type: input.type,
@@ -147,6 +154,8 @@ const buildPlanItem = (
 
 const formatDateForIcs = (date: Date) =>
   date.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+
+const baseInviteUrl = process.env.APP_BASE_URL ?? "https://example.com";
 
 export const createPlannerService = () => {
   const store = new Map<string, PlannerState>();
@@ -160,6 +169,8 @@ export const createPlannerService = () => {
       todos: [],
       habits: [],
       profile: { ...DEFAULT_PROFILE },
+      friends: [],
+      invites: [],
     };
 
     store.set(userId, initial);
@@ -209,9 +220,7 @@ export const createPlannerService = () => {
     const updated: PlannerEvent = {
       ...current,
       ...patch,
-      window: patch.window
-        ? normalizeWindow(patch.window)
-        : current.window,
+      window: patch.window ? normalizeWindow(patch.window) : current.window,
       reminder: applyReminder(
         patch.reminder ?? current.reminder,
         state.profile.defaultReminders.event,
@@ -342,10 +351,7 @@ export const createPlannerService = () => {
     return updated;
   };
 
-  const deleteHabit = async (
-    userId: string,
-    id: string,
-  ): Promise<boolean> => {
+  const deleteHabit = async (userId: string, id: string): Promise<boolean> => {
     const state = getState(userId);
     const sizeBefore = state.habits.length;
     state.habits = state.habits.filter((habit) => habit.id !== id);
@@ -518,6 +524,109 @@ export const createPlannerService = () => {
     return { tasks };
   };
 
+  const prioritizeTasks = async (
+    _userId: string,
+    request: PlannerPrioritizeRequest,
+  ): Promise<PlannerPrioritizeResponse> => {
+    const sorted = [...request.tasks].sort((left, right) => {
+      const score = (task: (typeof request.tasks)[number]) => {
+        const importance = task.importance ?? 3;
+        const effort = task.effortMinutes ?? 30;
+        const due = task.window?.start
+          ? new Date(task.window.start).getTime()
+          : Date.now() + 24 * 60 * 60 * 1000;
+
+        return importance * 3 + Math.max(0, 720 - effort) / 100 + 1 / due;
+      };
+
+      return score(right) - score(left);
+    });
+
+    const recommendations = sorted.map((task, index) => ({
+      id: task.id,
+      type: task.type,
+      rank: index + 1,
+      score: Math.max(0.1, Math.min(1, 1 - index * 0.08)),
+      reason:
+        task.importance && task.importance >= 4
+          ? "Высокая важность"
+          : "Балансируем по важности и усилиям",
+    }));
+
+    return { recommendations };
+  };
+
+  const createFriendInvite = async (
+    userId: string,
+  ): Promise<PlannerFriendInvite> => {
+    const state = getState(userId);
+    const code = randomUUID().replace(/-/g, "").slice(0, 10);
+    const invite: PlannerFriendInvite = {
+      code,
+      url: `${baseInviteUrl}/invite/${code}`,
+      createdAt: new Date(),
+      expiresAt: undefined,
+    };
+
+    state.invites.push(invite);
+    return invite;
+  };
+
+  const acceptFriendInvite = async (
+    userId: string,
+    code: string,
+  ): Promise<PlannerFriend | null> => {
+    const state = getState(userId);
+    const invite = state.invites.find((item) => item.code === code);
+
+    if (!invite) return null;
+
+    const friend: PlannerFriend = {
+      id: randomUUID(),
+      name: `Friend ${code.slice(0, 4)}`,
+      connectedAt: new Date(),
+      viaInviteCode: code,
+    };
+
+    state.friends.push(friend);
+    return friend;
+  };
+
+  const listFriends = async (userId: string): Promise<PlannerFriend[]> => {
+    const state = getState(userId);
+    return state.friends;
+  };
+
+  const generateCrazyTask = async (
+    userId: string,
+    request: PlannerCrazyTaskRequest,
+  ): Promise<PlannerCrazyTaskResponse> => {
+    const state = getState(userId);
+    const targetFriends = request.friends?.length
+      ? state.friends.filter((friend) => request.friends?.includes(friend.id))
+      : state.friends.slice(0, 2);
+
+    const rewardXp = 50 + Math.floor(Math.random() * 120);
+
+    const title = "Безумный поход за яблочным соком";
+    const description = request.locationHint?.length
+      ? `В ${request.locationHint} вместе с друзьями ${targetFriends
+          .map((friend) => friend.name)
+          .join(", ")}`
+      : "Стартуем ночью за 4 км и берем сок по пути";
+
+    const task: PlannerCrazyTask = {
+      title,
+      description,
+      rewardXp,
+      friends: targetFriends.map((friend) => friend.id),
+      promptUsed:
+        request.mood ?? "late-night adventurous juice run with friends",
+    };
+
+    return { task };
+  };
+
   return {
     listEvents,
     createEvent,
@@ -537,5 +646,10 @@ export const createPlannerService = () => {
     updateProfile,
     exportCalendar,
     generateRandomTasks,
+    prioritizeTasks,
+    createFriendInvite,
+    acceptFriendInvite,
+    listFriends,
+    generateCrazyTask,
   };
 };

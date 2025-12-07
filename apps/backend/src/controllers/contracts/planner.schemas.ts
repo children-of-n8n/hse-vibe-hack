@@ -262,6 +262,107 @@ export const plannerIdParamsSchema = t.Object({
 
 export type PlannerIdParams = Static<typeof plannerIdParamsSchema>;
 
+const plannerPrioritizeTaskSchema = t.Object({
+  id: t.String({ format: "uuid" }),
+  type: t.Union([t.Literal("event"), t.Literal("todo"), t.Literal("habit")]),
+  title: t.String({ minLength: 1, maxLength: 120 }),
+  description: t.Optional(t.String({ maxLength: 512 })),
+  window: t.Optional(plannerTimeWindowSchema),
+  recurrence: t.Optional(plannerRecurrenceSchema),
+  effortMinutes: t.Optional(t.Integer({ minimum: 5, maximum: 480 })),
+  importance: t.Optional(t.Integer({ minimum: 1, maximum: 5 })),
+});
+
+export const plannerPrioritizeRequestSchema = t.Object({
+  tasks: t.Array(plannerPrioritizeTaskSchema, { minItems: 1 }),
+  context: t.Optional(
+    t.String({ maxLength: 1024, description: "Additional LLM context" }),
+  ),
+  mood: t.Optional(t.String({ maxLength: 64 })),
+  focus: t.Optional(t.Array(t.String({ maxLength: 64 }))),
+});
+
+export const plannerPrioritizeResponseSchema = t.Object({
+  recommendations: t.Array(
+    t.Object({
+      id: t.String({ format: "uuid" }),
+      type: plannerPrioritizeTaskSchema.properties.type,
+      rank: t.Integer({ minimum: 1 }),
+      score: t.Number({ minimum: 0, maximum: 1 }),
+      reason: t.String({ maxLength: 512 }),
+    }),
+  ),
+});
+
+export type PlannerPrioritizeRequest = Static<
+  typeof plannerPrioritizeRequestSchema
+>;
+export type PlannerPrioritizeResponse = Static<
+  typeof plannerPrioritizeResponseSchema
+>;
+
+export const plannerFriendSchema = t.Object({
+  id: t.String({ format: "uuid" }),
+  name: t.String({ minLength: 1, maxLength: 64 }),
+  connectedAt: t.Date(),
+  viaInviteCode: t.Optional(t.String({ maxLength: 12 })),
+});
+
+export type PlannerFriend = Static<typeof plannerFriendSchema>;
+
+export const plannerFriendInviteSchema = t.Object({
+  code: t.String({ minLength: 6, maxLength: 32 }),
+  url: t.String({ description: "Shareable invite link" }),
+  createdAt: t.Date(),
+  expiresAt: t.Optional(t.Date()),
+});
+
+export type PlannerFriendInvite = Static<typeof plannerFriendInviteSchema>;
+
+export const plannerFriendInviteAcceptSchema = t.Object({
+  code: t.String({ minLength: 6, maxLength: 32 }),
+});
+
+export type PlannerFriendInviteAccept = Static<
+  typeof plannerFriendInviteAcceptSchema
+>;
+
+export const plannerFriendListResponseSchema = t.Object({
+  friends: t.Array(plannerFriendSchema),
+});
+
+export type PlannerFriendListResponse = Static<
+  typeof plannerFriendListResponseSchema
+>;
+
+export const plannerCrazyTaskRequestSchema = t.Object({
+  friends: t.Optional(t.Array(t.String({ format: "uuid" }))),
+  mood: t.Optional(t.String({ maxLength: 64 })),
+  locationHint: t.Optional(t.String({ maxLength: 128 })),
+});
+
+export type PlannerCrazyTaskRequest = Static<
+  typeof plannerCrazyTaskRequestSchema
+>;
+
+export const plannerCrazyTaskSchema = t.Object({
+  title: t.String({ minLength: 1, maxLength: 160 }),
+  description: t.String({ minLength: 1, maxLength: 512 }),
+  rewardXp: t.Integer({ minimum: 10, maximum: 1000 }),
+  friends: t.Array(t.String({ format: "uuid" })),
+  promptUsed: t.String({ maxLength: 256 }),
+});
+
+export type PlannerCrazyTask = Static<typeof plannerCrazyTaskSchema>;
+
+export const plannerCrazyTaskResponseSchema = t.Object({
+  task: plannerCrazyTaskSchema,
+});
+
+export type PlannerCrazyTaskResponse = Static<
+  typeof plannerCrazyTaskResponseSchema
+>;
+
 export const plannerCalendarExportSchema = t.String({
   description: "Generated iCalendar content",
 });
@@ -291,5 +392,14 @@ export const plannerContracts = new Elysia({ name: "planner-contracts" }).model(
     PlannerRandomTaskResponse: plannerRandomTaskResponseSchema,
     PlannerIdParams: plannerIdParamsSchema,
     PlannerCalendarExport: plannerCalendarExportSchema,
+    PlannerPrioritizeRequest: plannerPrioritizeRequestSchema,
+    PlannerPrioritizeResponse: plannerPrioritizeResponseSchema,
+    PlannerFriend: plannerFriendSchema,
+    PlannerFriendInvite: plannerFriendInviteSchema,
+    PlannerFriendInviteAccept: plannerFriendInviteAcceptSchema,
+    PlannerFriendListResponse: plannerFriendListResponseSchema,
+    PlannerCrazyTaskRequest: plannerCrazyTaskRequestSchema,
+    PlannerCrazyTask: plannerCrazyTaskSchema,
+    PlannerCrazyTaskResponse: plannerCrazyTaskResponseSchema,
   },
 );
