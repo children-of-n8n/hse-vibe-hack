@@ -93,6 +93,29 @@ export const AdventureCard = ({
             )}
           </div>
 
+          {adventure?.participants && adventure.participants.length > 0 && (
+            <div className="avatar-stack mx-auto mb-8">
+              {adventure.participants.slice(0, 4).map((p, i) => (
+                <div key={i} className="avatar-item" style={{ zIndex: 10 - i }}>
+                  {p.avatarUrl ? (
+                    <img
+                      src={p.avatarUrl}
+                      alt={p.username}
+                      className="h-full w-full rounded-full object-cover"
+                    />
+                  ) : (
+                    <span>{p.username.charAt(0).toUpperCase()}</span>
+                  )}
+                </div>
+              ))}
+              {adventure.participants.length > 4 && (
+                <div className="avatar-item bg-primary text-primary-foreground">
+                  +{adventure.participants.length - 4}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Bottom actions */}
           <div className="mt-auto flex flex-col items-center gap-4">
             <div className="flex flex-wrap items-center justify-center gap-3">
