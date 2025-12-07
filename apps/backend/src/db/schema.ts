@@ -16,6 +16,11 @@ export const todoStatusEnum = pgEnum("todo_status", [
   "completed",
 ]);
 
+export const adventureStatusEnum = pgEnum("adventure_status", [
+  "upcoming",
+  "completed",
+]);
+
 export const plannerTodos = pgTable("planner_todos", {
   id: uuid("id").primaryKey().defaultRandom(),
   userId: uuid("user_id")
@@ -111,6 +116,55 @@ export const plannerPhotoReports = pgTable("planner_photo_reports", {
   taskType: reportTaskTypeEnum("task_type").notNull(),
   imageUrl: text("image_url").notNull(),
   caption: text("caption"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const adventures = pgTable("adventures", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  creatorId: uuid("creator_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  status: adventureStatusEnum("status").notNull().default("upcoming"),
+  shareToken: text("share_token").notNull().unique(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+export const adventureParticipants = pgTable("adventure_participants", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  adventureId: uuid("adventure_id")
+    .notNull()
+    .references(() => adventures.id, { onDelete: "cascade" }),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  joinedAt: timestamp("joined_at").notNull().defaultNow(),
+});
+
+export const adventurePhotos = pgTable("adventure_photos", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  adventureId: uuid("adventure_id")
+    .notNull()
+    .references(() => adventures.id, { onDelete: "cascade" }),
+  uploaderId: uuid("uploader_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  url: text("url").notNull(),
+  caption: text("caption"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
+export const adventureReactions = pgTable("adventure_reactions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  photoId: uuid("photo_id")
+    .notNull()
+    .references(() => adventurePhotos.id, { onDelete: "cascade" }),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  emoji: text("emoji").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
