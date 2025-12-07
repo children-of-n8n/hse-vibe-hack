@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
     inputs:
       build_backend:
@@ -82,7 +85,7 @@ jobs:
     needs:
       - detect-changes
       - backend-tests
-    if: (github.event_name == 'workflow_dispatch' && github.event.inputs.build_backend != 'false') || (github.event_name != 'workflow_dispatch' && needs.detect-changes.outputs.backend == 'true')
+    if: github.event_name != 'pull_request' && ((github.event_name == 'workflow_dispatch' && github.event.inputs.build_backend != 'false') || (github.event_name != 'workflow_dispatch' && needs.detect-changes.outputs.backend == 'true'))
     runs-on: ubuntu-latest
     env:
       REGISTRY: ghcr.io
@@ -128,7 +131,7 @@ jobs:
   frontend:
     name: Build frontend image
     needs: detect-changes
-    if: (github.event_name == 'workflow_dispatch' && github.event.inputs.build_frontend != 'false') || (github.event_name != 'workflow_dispatch' && needs.detect-changes.outputs.frontend == 'true')
+    if: github.event_name != 'pull_request' && ((github.event_name == 'workflow_dispatch' && github.event.inputs.build_frontend != 'false') || (github.event_name != 'workflow_dispatch' && needs.detect-changes.outputs.frontend == 'true'))
     runs-on: ubuntu-latest
     env:
       REGISTRY: ghcr.io
