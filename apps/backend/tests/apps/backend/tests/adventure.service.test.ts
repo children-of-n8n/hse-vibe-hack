@@ -39,6 +39,18 @@ describe("adventure service", () => {
     expect(completed?.status).toBe("completed");
   });
 
+  it("returns null when joining invalid token and signing missing adventure", async () => {
+    const users = new InMemoryUserRepository();
+    const owner = await users.create({ username: "owner2", password: "pwd" });
+    const service = createAdventureService({ users });
+
+    const miss = await service.joinByToken(owner.id, "missing");
+    expect(miss).toBeNull();
+
+    const signed = await service.signPhotoUpload("missing", "file.png");
+    expect(signed).toBeNull();
+  });
+
   it("invalidates cached lists after status change", async () => {
     const users = new InMemoryUserRepository();
     const owner = await users.create({ username: "cache", password: "pwd" });
@@ -90,5 +102,11 @@ describe("adventure service", () => {
       "🔥",
     );
     expect(removed).toBe(true);
+
+    const deleted = await service.deletePhoto(adventure.id, photo?.id ?? "");
+    expect(deleted).toBe(true);
+
+    const reactionsAfterDelete = await service.listReactions(photo?.id ?? "");
+    expect(reactionsAfterDelete).toBeNull();
   });
 });

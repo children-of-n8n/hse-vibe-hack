@@ -40,7 +40,10 @@ export const createPlannerController = (deps: { users: UserRepository }) => {
         })
         .post(
           "/todos",
-          ({ currentUser, body }) => planner.createTodo(currentUser.id, body),
+          ({ currentUser, body, set }) => {
+            set.status = "Created";
+            return planner.createTodo(currentUser.id, body);
+          },
           {
             body: "PlannerTodoInput",
             response: { [StatusMap.Created]: plannerTodoSchema },
