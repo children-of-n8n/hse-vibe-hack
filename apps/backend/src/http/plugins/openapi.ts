@@ -97,6 +97,25 @@ export const openapi = createElysiaOpenapi({
       return undefined;
     }
 
-    return fromTypes(found);
+    // Use tsconfig next to the entry file so declaration output lands in a predictable place.
+    const projectRoot = (() => {
+      let dir = path.dirname(found);
+      while (dir !== path.parse(dir).root) {
+        if (fs.existsSync(path.join(dir, "tsconfig.json"))) return dir;
+        dir = path.dirname(dir);
+      }
+      return process.cwd();
+    })();
+
+    const relativeEntry = path.relative(projectRoot, found);
+    const entryWithinRoot = !relativeEntry.startsWith("..");
+
+    return fromTypes(entryWithinRoot ? relativeEntry : found, {
+      projectRoot,
+      tsconfigPath: path.join(projectRoot, "tsconfig.json"),
+      overrideOutputPath: entryWithinRoot
+        ? relativeEntry.replace(/\.tsx?$/, ".d.ts")
+        : undefined,
+    });
   })(),
 });
