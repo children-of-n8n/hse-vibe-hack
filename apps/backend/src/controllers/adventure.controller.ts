@@ -15,6 +15,7 @@ import {
   adventurePhotoWithReactionsSchema,
   adventureReactionSchema,
   adventureSchema,
+  adventureWithMediaSchema,
 } from "./contracts/adventure.schemas";
 import { createCurrentUserMacro } from "./macros/current-user";
 
@@ -29,6 +30,44 @@ export const createAdventureController = (deps: { users: UserRepository }) => {
         return { ...adventure, photos: photos ?? [] };
       }),
     );
+  const exampleAdventure: AdventureWithMedia = {
+    id: "11111111-1111-1111-1111-111111111111",
+    title: "Ночное приключение",
+    description:
+      "Идея: Ночное приключение. Компания: alice, bob. Будет весело и запомнится.",
+    status: "upcoming",
+    summary:
+      'Они завершили "Ночное приключение": alice, bob. Итог: прогулка по набережной...',
+    shareToken: "ADV-example",
+    participants: [
+      { id: "22222222-2222-2222-2222-222222222222", username: "alice" },
+      { id: "33333333-3333-3333-3333-333333333333", username: "bob" },
+    ],
+    createdAt: new Date("2024-01-01T00:00:00.000Z"),
+    updatedAt: new Date("2024-01-01T00:00:00.000Z"),
+    photos: [
+      {
+        id: "44444444-4444-4444-4444-444444444444",
+        adventureId: "11111111-1111-1111-1111-111111111111",
+        url: "https://example.com/photo.jpg",
+        caption: "Мы у набережной",
+        uploader: {
+          id: "22222222-2222-2222-2222-222222222222",
+          username: "alice",
+        },
+        createdAt: new Date("2024-01-01T00:00:00.000Z"),
+        reactions: [
+          {
+            id: "55555555-5555-5555-5555-555555555555",
+            photoId: "44444444-4444-4444-4444-444444444444",
+            userId: "33333333-3333-3333-3333-333333333333",
+            emoji: "🔥",
+            createdAt: new Date("2024-01-01T00:00:00.000Z"),
+          },
+        ],
+      },
+    ],
+  };
 
   return new Elysia({
     name: "adventure-controller",
@@ -63,7 +102,12 @@ export const createAdventureController = (deps: { users: UserRepository }) => {
           }),
           {
             response: {
-              [StatusMap.OK]: t.Object({ adventures: t.Array(t.Any()) }),
+              [StatusMap.OK]: t.Object(
+                {
+                  adventures: t.Array(adventureWithMediaSchema),
+                },
+                { examples: [{ adventures: [exampleAdventure] }] },
+              ),
             },
             detail: {
               summary: "List upcoming adventures",
@@ -80,7 +124,12 @@ export const createAdventureController = (deps: { users: UserRepository }) => {
           }),
           {
             response: {
-              [StatusMap.OK]: t.Object({ adventures: t.Array(t.Any()) }),
+              [StatusMap.OK]: t.Object(
+                {
+                  adventures: t.Array(adventureWithMediaSchema),
+                },
+                { examples: [{ adventures: [exampleAdventure] }] },
+              ),
             },
             detail: {
               summary: "List completed adventures",
@@ -102,7 +151,10 @@ export const createAdventureController = (deps: { users: UserRepository }) => {
           {
             params: t.Object({ id: t.String({ format: "uuid" }) }),
             response: {
-              [StatusMap.OK]: t.Object({ adventure: t.Any() }),
+              [StatusMap.OK]: t.Object(
+                { adventure: adventureWithMediaSchema },
+                { examples: [{ adventure: exampleAdventure }] },
+              ),
               [StatusMap["Not Found"]]: t.Void(),
             },
             detail: {

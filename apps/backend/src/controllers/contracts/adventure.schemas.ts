@@ -24,6 +24,12 @@ export const adventureSchema = t.Object({
     description: "AI-generated playful description",
   }),
   status: adventureStatusSchema,
+  summary: t.Optional(
+    t.String({
+      maxLength: 512,
+      description: "AI-generated recap after completion",
+    }),
+  ),
   shareToken: t.String({
     minLength: 6,
     maxLength: 32,
@@ -51,6 +57,7 @@ export const adventureUpdateSchema = t.Partial(
   t.Object({
     title: adventureSchema.properties.title,
     description: adventureSchema.properties.description,
+    summary: adventureSchema.properties.summary,
   }),
 );
 

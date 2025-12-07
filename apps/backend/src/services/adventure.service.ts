@@ -14,6 +14,8 @@ import type { CacheClient } from "@acme/backend/shared/cache";
 import { cache as defaultCache } from "@acme/backend/shared/cache";
 import { createS3Signer } from "@acme/backend/shared/s3";
 
+import { type AiClient, createAiClient } from "./ai.service";
+
 type AdventureState = {
   adventures: Map<string, Adventure>;
   photos: Map<string, AdventurePhoto>;
@@ -28,6 +30,7 @@ const buildShareToken = () =>
 export const createAdventureService = (deps: {
   users: UserRepository;
   cache?: CacheClient;
+  ai?: AiClient;
 }) => {
   const state: AdventureState = {
     adventures: new Map(),
@@ -36,6 +39,7 @@ export const createAdventureService = (deps: {
   };
   const cache = deps.cache ?? defaultCache;
   const signer = createS3Signer();
+  const ai = deps.ai ?? createAiClient();
 
   const participantForUser = async (
     userId: string,
@@ -57,11 +61,21 @@ export const createAdventureService = (deps: {
       (input.friendIds ?? []).map((id) => participantForUser(id)),
     );
 
+    const description =
+      (await ai
+        .generateAdventureDescription({
+          title: input.title,
+          participants: [creator, ...friendParticipants],
+        })
+        .catch(() => null)) ??
+      `AI draft: приключение "${input.title}" с друзьями.`;
+
     const adventure: Adventure = {
       id: randomUUID(),
       title: input.title,
-      description: `AI draft: приключение "${input.title}" с друзьями.`,
+      description,
       status: "upcoming",
+      summary: undefined,
       shareToken: buildShareToken(),
       participants: [creator, ...friendParticipants],
       createdAt: now(),
@@ -98,7 +112,9 @@ export const createAdventureService = (deps: {
 
   const updateAdventure = async (
     id: string,
-    patch: Partial<Pick<Adventure, "title" | "description" | "status">>,
+    patch: Partial<
+      Pick<Adventure, "title" | "description" | "status" | "summary">
+    >,
   ): Promise<Adventure | null> => {
     const current = state.adventures.get(id);
     if (!current) return null;
@@ -115,7 +131,19 @@ export const createAdventureService = (deps: {
   };
 
   const completeAdventure = async (id: string): Promise<Adventure | null> => {
-    return updateAdventure(id, { status: "completed" });
+    const adventure = state.adventures.get(id);
+    if (!adventure) return null;
+
+    const summary =
+      (await ai
+        .generateAdventureSummary({
+          title: adventure.title,
+          participants: adventure.participants,
+          description: adventure.description,
+        })
+        .catch(() => null)) ?? adventure.summary;
+
+    return updateAdventure(id, { status: "completed", summary });
   };
 
   const joinByToken = async (
