@@ -48,7 +48,7 @@ describe("adventure service", () => {
     expect(completed?.status).toBe("completed");
   });
 
-  it("returns null when joining invalid token and signing missing adventure", async () => {
+  it("returns null when token or adventure is invalid", async () => {
     const users = new InMemoryUserRepository();
     const owner = await users.create({ username: "owner2", password: "pwd" });
     const service = createAdventureService({
@@ -59,7 +59,11 @@ describe("adventure service", () => {
     const miss = await service.joinByToken(owner.id, "missing");
     expect(miss).toBeNull();
 
-    const signed = await service.signPhotoUpload("missing", "file.png");
+    const signed = await service.signPhotoUpload(
+      "missing",
+      owner.id,
+      "file.png",
+    );
     expect(signed).toBeNull();
   });
 
@@ -97,7 +101,11 @@ describe("adventure service", () => {
       title: "Фото-тест",
     });
 
-    const signed = await service.signPhotoUpload(adventure.id, "image.jpg");
+    const signed = await service.signPhotoUpload(
+      adventure.id,
+      owner.id,
+      "image.jpg",
+    );
     expect(signed?.uploadUrl).toContain("image.jpg");
 
     const photo = await service.uploadPhoto(
@@ -122,6 +130,37 @@ describe("adventure service", () => {
 
     const reactionsAfterDelete = await service.listReactions(adventure.id);
     expect(reactionsAfterDelete).toEqual([]);
+  });
+
+  it("allows participant to sign and upload a photo", async () => {
+    const users = new InMemoryUserRepository();
+    const owner = await users.create({ username: "owner3", password: "pwd" });
+    const friend = await users.create({ username: "friend", password: "pwd" });
+    const service = createAdventureService({
+      users,
+      store: createInMemoryAdventureStore(),
+    });
+
+    const adventure = await service.createAdventure(owner.id, {
+      title: "Совместное фото",
+    });
+    await service.joinByToken(friend.id, adventure.shareToken);
+
+    const signed = await service.signPhotoUpload(
+      adventure.id,
+      friend.id,
+      "friend.jpg",
+    );
+    expect(signed?.photoUrl).toContain("friend.jpg");
+
+    const photo = await service.uploadPhoto(
+      adventure.id,
+      friend.id,
+      "от друга",
+      signed?.photoUrl,
+    );
+
+    expect(photo?.uploader.id).toBe(friend.id);
   });
 
   it("returns null for missing adventure lookups", async () => {

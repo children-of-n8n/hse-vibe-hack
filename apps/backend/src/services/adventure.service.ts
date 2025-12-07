@@ -225,7 +225,10 @@ export const createAdventureService = (deps: {
     file?: File | Blob,
   ): Promise<AdventurePhoto | null> => {
     const adventure = await store.findById(adventureId);
-    if (!adventure || adventure.creatorId !== uploaderId) return null;
+    const isParticipant = adventure?.participants.some(
+      (participant) => participant.id === uploaderId,
+    );
+    if (!adventure || !isParticipant) return null;
 
     const fileName =
       (file && "name" in file && typeof file.name === "string" && file.name) ||
@@ -388,9 +391,16 @@ export const createAdventureService = (deps: {
     return store.listReactions(adventureId);
   };
 
-  const signPhotoUpload = async (adventureId: string, filename: string) => {
+  const signPhotoUpload = async (
+    adventureId: string,
+    requesterId: string,
+    filename: string,
+  ) => {
     const adventure = await store.findById(adventureId);
-    if (!adventure) return null;
+    const isParticipant = adventure?.participants.some(
+      (participant) => participant.id === requesterId,
+    );
+    if (!adventure || !isParticipant) return null;
 
     const key = `adventures/${adventureId}/${randomUUID()}/${filename}`;
     return signer.signPutUrl(key, contentTypeFromFilename(filename));

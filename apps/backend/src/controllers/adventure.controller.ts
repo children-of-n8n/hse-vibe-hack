@@ -393,18 +393,22 @@ export const createAdventureController = (deps: {
                 contentType: t.Optional(t.String({ maxLength: 128 })),
               }),
             ]),
-            response: { [StatusMap.Created]: adventurePhotoSchema },
+            response: {
+              [StatusMap.Created]: adventurePhotoSchema,
+              [StatusMap.Forbidden]: t.Void(),
+            },
             detail: {
               summary: "Upload photo",
-              description: "Прикрепить фото к приключению (только владелец).",
+              description: "Прикрепить фото к приключению (участники).",
             },
           },
         )
         .post(
           "/:id/photos/sign",
-          async ({ params, body, set }) => {
+          async ({ params, body, currentUser, set }) => {
             const signed = await service.signPhotoUpload(
               params.id,
+              currentUser.id,
               (body as { filename: string }).filename,
             );
             if (!signed) {
@@ -418,12 +422,13 @@ export const createAdventureController = (deps: {
             body: "AdventurePhotoUploadRequest",
             response: {
               [StatusMap.OK]: adventurePhotoUploadResponseSchema,
-              [StatusMap["Not Found"]]: t.Void(),
+              [StatusMap.Forbidden]: t.Void(),
             },
             detail: {
               summary: "Get signed photo upload URL",
               description:
-                "Возвращает signed URL для загрузки в S3-подобное хранилище.",
+                "Возвращает signed URL для загрузки в S3-подобное хранилище " +
+                "(только участники).",
             },
           },
         )

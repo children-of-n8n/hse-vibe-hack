@@ -326,12 +326,7 @@ export const createPostgresAdventureStore = (): AdventureStore => {
       const result = await db.transaction(async (tx) => {
         await tx
           .delete(adventureReactions)
-          .where(
-            and(
-              eq(adventureReactions.adventureId, reaction.adventureId),
-              eq(adventureReactions.userId, reaction.userId),
-            ),
-          );
+          .where(eq(adventureReactions.adventureId, reaction.adventureId));
 
         const [created] = await tx
           .insert(adventureReactions)
@@ -353,13 +348,7 @@ export const createPostgresAdventureStore = (): AdventureStore => {
     async removeReaction(adventureId, userId, emoji) {
       const [deleted] = await db
         .delete(adventureReactions)
-        .where(
-          and(
-            eq(adventureReactions.adventureId, adventureId),
-            eq(adventureReactions.userId, userId),
-            eq(adventureReactions.emoji, emoji),
-          ),
-        )
+        .where(eq(adventureReactions.adventureId, adventureId))
         .returning({ id: adventureReactions.id });
       return Boolean(deleted);
     },

@@ -129,10 +129,7 @@ export const createInMemoryAdventureStore = (
       if (!adventure) return null;
 
       for (const [id, entry] of [...reactions.entries()]) {
-        if (
-          entry.adventureId === reaction.adventureId &&
-          entry.userId === reaction.userId
-        ) {
+        if (entry.adventureId === reaction.adventureId) {
           reactions.delete(id);
         }
       }
@@ -146,11 +143,7 @@ export const createInMemoryAdventureStore = (
     async removeReaction(adventureId, userId, emoji) {
       let removed = false;
       for (const [id, entry] of [...reactions.entries()]) {
-        if (
-          entry.adventureId === adventureId &&
-          entry.userId === userId &&
-          entry.emoji === emoji
-        ) {
+        if (entry.adventureId === adventureId) {
           reactions.delete(id);
           removed = true;
         }
