@@ -5,11 +5,21 @@ services:
       - NODE_ENV=production
       - PORT=3000
       - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-hse_vibe_hack_db}
+      - REDIS_URL=redis://:redispass@redis:6379
+      - S3_BUCKET=${S3_BUCKET}
+      - S3_REGION=${S3_REGION:-us-east-1}
+      - S3_ACCESS_KEY=${S3_ACCESS_KEY}
+      - S3_SECRET_KEY=${S3_SECRET_KEY}
+      - S3_ENDPOINT=${S3_ENDPOINT}
+      - S3_PUBLIC_BASE_URL=${S3_PUBLIC_BASE_URL}
+      - APP_BASE_URL=${APP_BASE_URL:-http://localhost:3000}
     networks:
       - application
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_started
 
   postgres:
     image: postgres:17
@@ -28,6 +38,14 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--requirepass", "redispass"]
+    ports:
+      - "127.0.0.1:51294:6379"
+    networks:
+      - application
 
 volumes:
   pgdata:

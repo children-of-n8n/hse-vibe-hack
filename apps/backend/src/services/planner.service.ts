@@ -15,9 +15,6 @@ import type {
   PlannerRandomTask,
   PlannerRandomTaskRequest,
   PlannerRandomTaskResponse,
-  PlannerRangeQuery,
-  PlannerReminder,
-  PlannerTimeWindow,
   PlannerTodo,
   PlannerTodoInput,
   PlannerTodoUpdate,
@@ -30,8 +27,6 @@ type PlannerState = {
   crazyTasks: PlannerCrazyTask[];
   photoReports: PlannerPhotoReport[];
 };
-
-const DEFAULT_TODO_REMINDER: PlannerReminder = { minutesBefore: 15 };
 
 const SUGGESTION_POOL: PlannerRandomTask[] = [
   {
@@ -72,43 +67,6 @@ const SUGGESTION_POOL: PlannerRandomTask[] = [
   },
 ];
 
-const normalizeWindow = (window: PlannerTimeWindow): PlannerTimeWindow => {
-  const start = new Date(window.start);
-  const end = new Date(window.end);
-
-  if (end.getTime() < start.getTime()) {
-    return { start: end, end: start };
-  }
-
-  return { start, end };
-};
-
-const windowOverlapsRange = (
-  window: PlannerTimeWindow | undefined,
-  range?: PlannerRangeQuery,
-) => {
-  if (!window) return true;
-  if (!range) return true;
-
-  const start = new Date(window.start);
-  const end = new Date(window.end);
-
-  if (range.from && end.getTime() < new Date(range.from).getTime()) {
-    return false;
-  }
-
-  if (range.to && start.getTime() > new Date(range.to).getTime()) {
-    return false;
-  }
-
-  return true;
-};
-
-const applyReminder = (
-  reminder: PlannerReminder | undefined,
-  fallback: PlannerReminder,
-): PlannerReminder => reminder ?? fallback;
-
 const baseInviteUrl = process.env.APP_BASE_URL ?? "https://example.com";
 
 export const createPlannerService = () => {
@@ -133,12 +91,9 @@ export const createPlannerService = () => {
   const getStateMaybe = (userId: string): PlannerState | undefined =>
     store.get(userId);
 
-  const listTodos = async (
-    userId: string,
-    range?: PlannerRangeQuery,
-  ): Promise<PlannerTodo[]> => {
+  const listTodos = async (userId: string): Promise<PlannerTodo[]> => {
     const state = getState(userId);
-    return state.todos.filter((todo) => windowOverlapsRange(todo.due, range));
+    return [...state.todos];
   };
 
   const createTodo = async (
@@ -149,8 +104,6 @@ export const createPlannerService = () => {
     const todo: PlannerTodo = {
       id: randomUUID(),
       ...input,
-      due: input.due ? normalizeWindow(input.due) : undefined,
-      reminder: applyReminder(input.reminder, DEFAULT_TODO_REMINDER),
       status: "pending",
     };
 
@@ -172,11 +125,6 @@ export const createPlannerService = () => {
     const updated: PlannerTodo = {
       ...current,
       ...patch,
-      due: patch.due ? normalizeWindow(patch.due) : current.due,
-      reminder: applyReminder(
-        patch.reminder ?? current.reminder,
-        DEFAULT_TODO_REMINDER,
-      ),
       status: patch.status ?? current.status,
     };
 
@@ -198,12 +146,8 @@ export const createPlannerService = () => {
     const count = request.count ?? 3;
     const shuffled = [...SUGGESTION_POOL].sort(() => Math.random() - 0.5);
     const tasks = shuffled.slice(0, count).map((task) => {
-      const suggestedWindow = request.range
-        ? normalizeWindow(request.range)
-        : undefined;
-
       if (!request.mood && !request.focus) {
-        return { ...task, suggestedWindow };
+        return { ...task };
       }
 
       const descriptionParts = [task.description];
@@ -216,7 +160,6 @@ export const createPlannerService = () => {
 
       return {
         ...task,
-        suggestedWindow,
         description: descriptionParts.filter(Boolean).join(". "),
       } satisfies PlannerRandomTask;
     });
@@ -232,11 +175,7 @@ export const createPlannerService = () => {
     const score = (task: PrioritizeTask) => {
       const importance = task.importance ?? 3;
       const effort = task.effortMinutes ?? 30;
-      const due = task.window?.start
-        ? new Date(task.window.start).getTime()
-        : Date.now() + 24 * 60 * 60 * 1000;
-
-      return importance * 3 + Math.max(0, 720 - effort) / 100 + 1 / due;
+      return importance * 3 + Math.max(0, 720 - effort) / 100;
     };
 
     const sorted = [...request.tasks].sort(

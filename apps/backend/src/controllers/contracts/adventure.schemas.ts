@@ -80,6 +80,33 @@ export const adventurePhotoSchema = t.Object({
 
 export type AdventurePhoto = Static<typeof adventurePhotoSchema>;
 
+export const adventurePhotoUploadRequestSchema = t.Object({
+  filename: t.String({ minLength: 1, maxLength: 256 }),
+  contentType: t.Optional(t.String({ maxLength: 128 })),
+});
+
+export type AdventurePhotoUploadRequest = Static<
+  typeof adventurePhotoUploadRequestSchema
+>;
+
+export const adventurePhotoUploadResponseSchema = t.Object({
+  uploadUrl: t.String({ format: "uri" }),
+  photoUrl: t.String({ format: "uri" }),
+  expiresIn: t.Integer({ minimum: 1 }),
+  key: t.String(),
+});
+
+export type AdventurePhotoUploadResponse = Static<
+  typeof adventurePhotoUploadResponseSchema
+>;
+
+export const adventurePhotoConfirmSchema = t.Object({
+  photoUrl: t.String({ format: "uri" }),
+  caption: t.Optional(t.String({ maxLength: 160 })),
+});
+
+export type AdventurePhotoConfirm = Static<typeof adventurePhotoConfirmSchema>;
+
 export const adventureReactionSchema = t.Object({
   id: t.String({ format: "uuid" }),
   photoId: adventurePhotoSchema.properties.id,
@@ -111,4 +138,7 @@ export const adventureContracts = new Elysia({
   AdventurePhoto: adventurePhotoSchema,
   AdventureReaction: adventureReactionSchema,
   AdventureReactionInput: adventureReactionInputSchema,
+  AdventurePhotoUploadRequest: adventurePhotoUploadRequestSchema,
+  AdventurePhotoUploadResponse: adventurePhotoUploadResponseSchema,
+  AdventurePhotoConfirm: adventurePhotoConfirmSchema,
 });

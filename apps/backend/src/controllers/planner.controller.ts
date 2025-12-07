@@ -31,18 +31,13 @@ export const createPlannerController = (deps: { users: UserRepository }) => {
     .use([plannerContracts, createCurrentUserMacro(deps.users)])
     .guard({ currentUser: true }, (app) =>
       app
-        .get(
-          "/todos",
-          ({ currentUser, query }) => planner.listTodos(currentUser.id, query),
-          {
-            query: "PlannerRangeQuery",
-            response: { [StatusMap.OK]: t.Array(plannerTodoSchema) },
-            detail: {
-              summary: "List todos",
-              description: "Задачи с диапазоном по due",
-            },
+        .get("/todos", ({ currentUser }) => planner.listTodos(currentUser.id), {
+          response: { [StatusMap.OK]: t.Array(plannerTodoSchema) },
+          detail: {
+            summary: "List todos",
+            description: "Список задач без календаря",
           },
-        )
+        })
         .post(
           "/todos",
           ({ currentUser, body }) => planner.createTodo(currentUser.id, body),

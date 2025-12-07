@@ -2,12 +2,6 @@ import { describe, expect, it } from "bun:test";
 
 import { createPlannerService } from "@acme/backend/services/planner.service";
 
-const windowOf = (startIso: string, minutes: number) => {
-  const start = new Date(startIso);
-  const end = new Date(start.getTime() + minutes * 60 * 1000);
-  return { start, end } as const;
-};
-
 describe("planner service", () => {
   it("prioritizes tasks by importance and effort", async () => {
     const planner = createPlannerService();
@@ -38,8 +32,6 @@ describe("planner service", () => {
 
   it("prioritizes lower effort when other factors equal", async () => {
     const planner = createPlannerService();
-    const now = new Date();
-    const window = windowOf(now.toISOString(), 30);
 
     const response = await planner.prioritizeTasks("u1", {
       tasks: [
@@ -49,7 +41,6 @@ describe("planner service", () => {
           title: "Heavy",
           importance: 3,
           effortMinutes: 300,
-          window,
         },
         {
           id: "light",
@@ -57,7 +48,6 @@ describe("planner service", () => {
           title: "Light",
           importance: 3,
           effortMinutes: 20,
-          window,
         },
       ],
     });
