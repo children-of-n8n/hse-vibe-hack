@@ -158,39 +158,3 @@ describe("users controller", () => {
     expect(response.status).toBe(401);
   });
 });
-
-describe("planner controller auth guard", () => {
-  it("rejects planner requests without auth", async () => {
-    const users = new InMemoryUserRepository();
-    const app = createTestApp(users);
-
-    const listResponse = await app.handle(getRequest("/planner/todos"));
-    expect(listResponse.status).toBe(401);
-
-    const randomTaskResponse = await app.handle(
-      authJsonRequest("/planner/random-tasks", { count: 1 }),
-    );
-    expect(randomTaskResponse.status).toBe(401);
-  });
-
-  it("allows planner requests with auth cookie", async () => {
-    const users = new InMemoryUserRepository();
-    const app = createTestApp(users);
-
-    const registerResponse = await app.handle(
-      authJsonRequest("/auth/register", {
-        username: "eva",
-        password: "password123",
-      }),
-    );
-    const authCookie = extractAuthCookie(registerResponse);
-
-    const listResponse = await app.handle(
-      getRequest("/planner/todos", authCookie),
-    );
-
-    expect(listResponse.status).toBe(200);
-    const body = await listResponse.json();
-    expect(Array.isArray(body)).toBe(true);
-  });
-});

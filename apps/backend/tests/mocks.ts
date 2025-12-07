@@ -2,7 +2,6 @@ import { Elysia } from "elysia";
 
 import { createAdventureController } from "@acme/backend/controllers/adventure.controller";
 import { createAuthController } from "@acme/backend/controllers/auth.controller";
-import { createPlannerController } from "@acme/backend/controllers/planner.controller";
 import { createUserController } from "@acme/backend/controllers/user.controller";
 import type {
   NewUser,
@@ -46,7 +45,6 @@ export const createTestApp = (
   const controllers = [
     createAuthController({ users }),
     createUserController({ users }),
-    createPlannerController({ users }),
   ];
 
   if (opts?.includeAdventure) {

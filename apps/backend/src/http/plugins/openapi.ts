@@ -38,7 +38,7 @@ export const openapi = createElysiaOpenapi({
       title: name,
       version: version,
       description:
-        "API для задач: аутентификация, пользователи, задачи, приоритизация, друзья, crazy-задачи и фотоотчёты.",
+        "API для аутентификации, пользователей и приключений с фото/реакциями.",
     },
     tags: [
       {
@@ -53,11 +53,6 @@ export const openapi = createElysiaOpenapi({
         name: "Adventures",
         description:
           "Приключения, приглашения по токену, фото и реакции. Моки для фронтенда.",
-      },
-      {
-        name: "Planner",
-        description:
-          "Задачи, генерации заданий, приоритизация, друзья, фотоотчёты и фид.",
       },
     ],
     components: {
