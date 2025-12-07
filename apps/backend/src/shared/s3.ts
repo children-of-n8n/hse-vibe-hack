@@ -1,7 +1,9 @@
 import { randomUUID } from "node:crypto";
 
 import {
+  GetObjectCommand,
   PutObjectCommand,
+  type PutObjectCommandInput,
   S3Client,
   type S3ClientConfig,
 } from "@aws-sdk/client-s3";
@@ -14,11 +16,18 @@ type SignerDeps = {
   endpoint?: string;
   credentials?: S3ClientConfig["credentials"];
   client?: S3Client;
+  putAcl?: PutObjectCommandInput["ACL"];
 };
 
 export type SignedPutUrl = {
   uploadUrl: string;
   photoUrl: string;
+  expiresIn: number;
+  key: string;
+};
+
+export type SignedGetUrl = {
+  url: string;
   expiresIn: number;
   key: string;
 };
@@ -50,6 +59,9 @@ export const createS3Signer = (deps: SignerDeps = {}) => {
           secretAccessKey: process.env.S3_SECRET_KEY,
         }
       : undefined);
+  const putAcl =
+    deps.putAcl ??
+    (process.env.S3_PUT_OBJECT_ACL as PutObjectCommandInput["ACL"] | undefined);
 
   const baseUrl = deps.baseUrl ?? buildBaseUrl({ bucket, region, endpoint });
 
@@ -83,6 +95,7 @@ export const createS3Signer = (deps: SignerDeps = {}) => {
       Bucket: bucket,
       Key: key,
       ContentType: contentType,
+      ACL: putAcl,
     });
 
     const uploadUrl = await getSignedUrl(client, command, { expiresIn });
@@ -94,5 +107,27 @@ export const createS3Signer = (deps: SignerDeps = {}) => {
     };
   };
 
-  return { signPutUrl };
+  const signGetUrl = async (
+    key: string,
+    expiresIn = 900,
+  ): Promise<SignedGetUrl> => {
+    if (!client || !bucket) {
+      const signature = randomUUID().replace(/-/g, "");
+      return {
+        url: `${baseUrl}/${key}?signature=${signature}&expires=${expiresIn}`,
+        expiresIn,
+        key,
+      };
+    }
+
+    const command = new GetObjectCommand({
+      Bucket: bucket,
+      Key: key,
+    });
+
+    const url = await getSignedUrl(client, command, { expiresIn });
+    return { url, expiresIn, key };
+  };
+
+  return { signPutUrl, signGetUrl, baseUrl };
 };

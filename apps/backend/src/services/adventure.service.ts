@@ -224,16 +224,49 @@ export const createAdventureService = (deps: {
     caption?: string,
     photoUrl?: string,
     _contentType?: string,
+    file?: File | Blob,
   ): Promise<AdventurePhoto | null> => {
     const adventure = await store.findById(adventureId);
     if (!adventure || adventure.creatorId !== uploaderId) return null;
+
+    const fileName =
+      (file && "name" in file && typeof file.name === "string" && file.name) ||
+      "upload.jpg";
+    const contentType =
+      _contentType ||
+      (file && "type" in file && typeof file.type === "string" && file.type) ||
+      contentTypeFromFilename(fileName);
+
+    let uploadedUrl = photoUrl;
+    if (!uploadedUrl && file) {
+      try {
+        const key = `adventures/${adventureId}/${randomUUID()}/${fileName}`;
+        const signed = await signer.signPutUrl(key, contentType);
+        const response = await fetch(signed.uploadUrl, {
+          method: "PUT",
+          headers: contentType ? { "Content-Type": contentType } : undefined,
+          body: file,
+        });
+        if (!response.ok) {
+          console.error("Failed to upload photo to signed URL", {
+            status: response.status,
+            statusText: response.statusText,
+          });
+          return null;
+        }
+        uploadedUrl = signed.photoUrl;
+      } catch (error) {
+        console.error("Photo upload failed", error);
+        return null;
+      }
+    }
 
     const uploader = await participantForUser(uploaderId);
     const photo: AdventurePhoto = {
       id: randomUUID(),
       adventureId,
       url:
-        photoUrl ??
+        uploadedUrl ??
         `https://placehold.co/800x600?text=${adventureId.slice(0, 6)}`,
       uploader,
       caption,
@@ -241,6 +274,29 @@ export const createAdventureService = (deps: {
     };
 
     return store.createPhoto(photo);
+  };
+
+  const signPhotoView = async (
+    adventureId: string,
+    photoId: string,
+    requesterId: string,
+  ) => {
+    const adventure = await store.findById(adventureId);
+    if (!adventure) return null;
+
+    const isParticipant = adventure.participants.some(
+      (p) => p.id === requesterId,
+    );
+    if (!isParticipant) return null;
+
+    const photos = await store.listPhotos(adventureId);
+    const photo = photos?.find((p) => p.id === photoId);
+    if (!photo) return null;
+
+    const key = keyFromPhotoUrl(photo.url, signer.baseUrl);
+    if (!key) return null;
+
+    return signer.signGetUrl(key);
   };
 
   const listPhotos = async (
@@ -251,13 +307,31 @@ export const createAdventureService = (deps: {
 
   const listPhotosWithReactions = async (
     adventureId: string,
+    viewerId?: string,
   ): Promise<AdventurePhotoWithReactions[] | null> => {
     const photos = await listPhotos(adventureId);
     if (!photos) return null;
+
+    const adventure =
+      viewerId && photos.length > 0 ? await store.findById(adventureId) : null;
+    const canViewSigned =
+      Boolean(viewerId) &&
+      Boolean(adventure) &&
+      adventure?.participants.some((p) => p.id === viewerId);
+
     const withReactions = await Promise.all(
       photos.map(async (photo) => {
         const reactions = (await listReactions(photo.id)) ?? [];
-        return { ...photo, reactions };
+        const key =
+          canViewSigned && photo.url
+            ? keyFromPhotoUrl(photo.url, signer.baseUrl)
+            : null;
+        const signedUrl = key ? await signer.signGetUrl(key) : null;
+        return {
+          ...photo,
+          url: signedUrl?.url ?? photo.url,
+          reactions,
+        };
       }),
     );
     return withReactions;
@@ -337,6 +411,7 @@ export const createAdventureService = (deps: {
     signPhotoUpload,
     listPhotosWithReactions,
     listFriends,
+    signPhotoView,
   };
 };
 
@@ -347,4 +422,13 @@ const contentTypeFromFilename = (filename: string | undefined) => {
   if (lower.endsWith(".png")) return "image/png";
   if (lower.endsWith(".webp")) return "image/webp";
   return undefined;
+};
+
+const keyFromPhotoUrl = (photoUrl: string, baseUrl: string) => {
+  const normalizedBase = baseUrl.replace(/\/+$/, "");
+  const prefix = `${normalizedBase}/`;
+  if (photoUrl.startsWith(prefix)) {
+    return photoUrl.slice(prefix.length);
+  }
+  return null;
 };

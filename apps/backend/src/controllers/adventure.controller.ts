@@ -33,10 +33,14 @@ export const createAdventureController = (deps: {
   });
   const enrichWithMedia = async (
     adventures: Adventure[],
+    viewerId?: string,
   ): Promise<AdventureWithMedia[]> =>
     Promise.all(
       adventures.map(async (adventure) => {
-        const photos = await service.listPhotosWithReactions(adventure.id);
+        const photos = await service.listPhotosWithReactions(
+          adventure.id,
+          viewerId,
+        );
         return { ...adventure, photos: photos ?? [] };
       }),
     );
@@ -111,6 +115,7 @@ export const createAdventureController = (deps: {
           async ({ currentUser }) => ({
             adventures: await enrichWithMedia(
               await service.listByStatus(currentUser.id, "upcoming"),
+              currentUser.id,
             ),
           }),
           {
@@ -133,6 +138,7 @@ export const createAdventureController = (deps: {
           async ({ currentUser }) => ({
             adventures: await enrichWithMedia(
               await service.listByStatus(currentUser.id, "completed"),
+              currentUser.id,
             ),
           }),
           {
@@ -152,13 +158,15 @@ export const createAdventureController = (deps: {
         )
         .get(
           "/:id",
-          async ({ params, set }) => {
+          async ({ params, set, currentUser }) => {
             const adventure = await service.getById(params.id);
             if (!adventure) {
               set.status = "Not Found";
               return;
             }
-            const full = (await enrichWithMedia([adventure]))[0];
+            const full = (
+              await enrichWithMedia([adventure], currentUser.id)
+            )[0];
             return { adventure: full };
           },
           {
@@ -344,12 +352,19 @@ export const createAdventureController = (deps: {
         .post(
           "/:id/photos",
           async ({ currentUser, params, body, set }) => {
+            const { file, caption, photoUrl, contentType } = body as {
+              file?: File;
+              caption?: string;
+              photoUrl?: string;
+              contentType?: string;
+            };
             const photo = await service.uploadPhoto(
               params.id,
               currentUser.id,
-              (body as { caption?: string }).caption,
-              (body as { photoUrl?: string }).photoUrl,
-              (body as { contentType?: string }).contentType,
+              caption,
+              photoUrl,
+              contentType,
+              file,
             );
             if (!photo) {
               set.status = "Forbidden";
@@ -411,8 +426,11 @@ export const createAdventureController = (deps: {
         )
         .get(
           "/:id/photos",
-          async ({ params, set }) => {
-            const photos = await service.listPhotosWithReactions(params.id);
+          async ({ params, set, currentUser }) => {
+            const photos = await service.listPhotosWithReactions(
+              params.id,
+              currentUser.id,
+            );
             if (photos === null) {
               set.status = "Not Found";
               return;
@@ -454,6 +472,40 @@ export const createAdventureController = (deps: {
             detail: {
               summary: "Delete photo",
               description: "Удалить фото.",
+            },
+          },
+        )
+        .get(
+          "/:id/photos/:photoId/signed",
+          async ({ currentUser, params, set }) => {
+            const signed = await service.signPhotoView(
+              params.id,
+              params.photoId,
+              currentUser.id,
+            );
+            if (!signed) {
+              set.status = "Not Found";
+              return;
+            }
+            return signed;
+          },
+          {
+            params: t.Object({
+              id: t.String({ format: "uuid" }),
+              photoId: t.String({ format: "uuid" }),
+            }),
+            response: {
+              [StatusMap.OK]: t.Object({
+                url: t.String({ format: "uri" }),
+                expiresIn: t.Integer({ minimum: 1 }),
+                key: t.String(),
+              }),
+              [StatusMap["Not Found"]]: t.Void(),
+            },
+            detail: {
+              summary: "Get signed URL to view photo",
+              description:
+                "Возвращает временную ссылку на просмотр фото (для участников приключения).",
             },
           },
         )
