@@ -18,7 +18,6 @@ import {
   type AdventureStore,
   createInMemoryAdventureStore,
 } from "./adventure.store";
-import { createPostgresAdventureStore } from "./adventure.store.postgres";
 import { type AiClient, createAiClient } from "./ai.service";
 
 const defaultNow = () => new Date();
@@ -42,7 +41,7 @@ export const createAdventureService = (deps: {
     deps.store ??
     (process.env.NODE_ENV === "test"
       ? createInMemoryAdventureStore(now)
-      : createPostgresAdventureStore());
+      : createLazyPostgresStore(now));
 
   const participantForUser = async (
     userId: string,
@@ -428,6 +427,16 @@ export const createAdventureService = (deps: {
     listFriends,
     signPhotoView,
   };
+};
+
+const createLazyPostgresStore = (now: () => Date) => {
+  // Lazy import to avoid loading DB client when not needed (e.g., tests without DATABASE_URL).
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { createPostgresAdventureStore } =
+    require("./adventure.store.postgres") as {
+      createPostgresAdventureStore: () => AdventureStore;
+    };
+  return createPostgresAdventureStore();
 };
 
 const contentTypeFromFilename = (filename: string | undefined) => {

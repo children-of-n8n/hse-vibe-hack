@@ -115,7 +115,7 @@ describe("adventure controller", () => {
 
     const reactionRes = await app.handle(
       authJsonRequest(
-        `/adventures/photos/${photo.id}/reactions`,
+        `/adventures/${adventure.id}/reactions`,
         { emoji: "🔥" },
         cookie,
       ),
@@ -123,7 +123,7 @@ describe("adventure controller", () => {
     expect(reactionRes.status).toBe(201);
 
     const reactionsList = await app.handle(
-      getRequest(`/adventures/photos/${photo.id}/reactions`, cookie),
+      getRequest(`/adventures/${adventure.id}/reactions`, cookie),
     );
     expect(reactionsList.status).toBe(200);
     const reactions = await reactionsList.json();
