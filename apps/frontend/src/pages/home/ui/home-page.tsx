@@ -21,7 +21,7 @@ export function HomePage() {
 
   return (
     <div className="min-h-screen">
-      <div className="fixed top-4 right-4 left-4 z-10 flex justify-between">
+      <div className="fixed top-4 right-4 left-4 z-50 flex justify-between">
         <ThemeToggler />
         <CurrentUserMenu currentUser={currentUser} />
       </div>
