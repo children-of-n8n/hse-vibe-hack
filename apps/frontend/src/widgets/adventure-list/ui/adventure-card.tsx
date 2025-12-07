@@ -241,18 +241,30 @@ export const AdventureCard = ({
         {/* Bottom actions */}
         <div className="mt-auto flex flex-col items-center gap-4">
           <div className="flex items-center gap-3">
-            {/*TODO: get reactions from adventure and extract count of them and display next to each reaction*/}
-            {["🔥", "❤️", "😍", "😂", "🤔"].map((reaction) => (
-              <Button
-                key={reaction}
-                variant="outline"
-                className="size-12 cursor-pointer rounded-full text-3xl transition-transform hover:scale-115"
-                onClick={() => addReactionMutation.mutate?.(reaction)}
-                disabled={addReactionMutation.isPending}
-              >
-                {reaction}
-              </Button>
-            ))}
+            {["🔥", "❤️", "😍", "😂", "🤔"].map((emoji) => {
+              // Подсчитываем количество реакций с этим эмодзи
+              const count = (adventure?.reactions || []).filter(
+                (r) => r.emoji === emoji,
+              ).length;
+
+              return (
+                <div key={emoji} className="relative">
+                  <Button
+                    variant="outline"
+                    className="size-12 cursor-pointer rounded-full text-3xl transition-transform hover:scale-110"
+                    onClick={() => addReactionMutation.mutate(emoji)}
+                    disabled={addReactionMutation.isPending}
+                  >
+                    {emoji}
+                  </Button>
+                  {count > 0 && (
+                    <span className="-top-2 -right-2 absolute flex size-5 items-center justify-center rounded-full bg-red-500 font-bold text-[10px] text-white">
+                      {count}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
