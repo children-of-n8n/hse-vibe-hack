@@ -3,7 +3,13 @@ import { Link } from "react-router";
 
 import { Button } from "@acme/frontend/shared/ui/button";
 
-export function AdventureListPlaceholder({ onAdd }: { onAdd: VoidFunction }) {
+export function AdventureListPlaceholder({
+  onAdd,
+  count,
+}: {
+  onAdd: VoidFunction;
+  count: number;
+}) {
   return (
     <div className="adventure-card relative flex h-screen w-full snap-start snap-always flex-col items-center justify-center">
       <div className="my-auto flex flex-col items-center justify-center">
@@ -12,7 +18,9 @@ export function AdventureListPlaceholder({ onAdd }: { onAdd: VoidFunction }) {
         </div>
         {/* Text */}
         <p className="mb-10 max-w-xs text-lg text-muted-foreground">
-          У тебя пока нет приключений
+          {count
+            ? "У тебя пока нет приключений"
+            : "Готовы к новым приключениям?"}
         </p>
         {/* Add button */}
         <Button
