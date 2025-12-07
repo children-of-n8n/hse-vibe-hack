@@ -141,11 +141,11 @@ export const createAdventureService = (deps: {
 
   const completeAdventure = async (
     id: string,
-    requesterId: string,
+    requesterId?: string,
   ): Promise<Adventure | null> => {
     const adventure = await store.findById(id);
     if (!adventure) return null;
-    if (adventure.creatorId !== requesterId) return null;
+    if (requesterId && adventure.creatorId !== requesterId) return null;
 
     const summary =
       (await ai
