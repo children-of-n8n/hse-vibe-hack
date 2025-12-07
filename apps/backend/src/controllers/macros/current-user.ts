@@ -9,9 +9,15 @@ export const createCurrentUserMacro = (users: UserRepository) =>
   new Elysia({ name: "current-user-macro" })
     .use([jwt, authContracts])
     .macro("currentUser", {
-      cookie: "AuthCookie",
+      cookie: "AuthCookieOptional",
       resolve: async ({ jwt, cookie, status }) => {
-        const payload = await jwt.verify(cookie.auth.value);
+        const token = cookie.auth.value;
+
+        if (!token) {
+          return status("Unauthorized");
+        }
+
+        const payload = await jwt.verify(token);
 
         if (!payload || !payload.sub) {
           return status("Unauthorized");

@@ -1,5 +1,6 @@
 import { Elysia, InvertedStatusMap, redirect } from "elysia";
 
+import { createAdventureController } from "@acme/backend/controllers/adventure.controller";
 import { createAuthController } from "@acme/backend/controllers/auth.controller";
 import { createPlannerController } from "@acme/backend/controllers/planner.controller";
 import { createUserController } from "@acme/backend/controllers/user.controller";
@@ -31,6 +32,7 @@ export const app = new Elysia()
     cors,
     openapi,
     createAuthController({ users: userRepository }),
+    createAdventureController({ users: userRepository }),
     createPlannerController({ users: userRepository }),
     createUserController({ users: userRepository }),
   ])

@@ -1,6 +1,7 @@
 import { Elysia } from "elysia";
 
 import { createAuthController } from "@acme/backend/controllers/auth.controller";
+import { createPlannerController } from "@acme/backend/controllers/planner.controller";
 import { createUserController } from "@acme/backend/controllers/user.controller";
 import type {
   NewUser,
@@ -41,6 +42,7 @@ export const createTestApp = (users: InMemoryUserRepository) =>
   new Elysia().use([
     createAuthController({ users }),
     createUserController({ users }),
+    createPlannerController({ users }),
   ]);
 
 export const authJsonRequest = (path: string, body: unknown, cookie?: string) =>
