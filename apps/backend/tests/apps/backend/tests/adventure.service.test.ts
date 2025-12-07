@@ -108,24 +108,20 @@ describe("adventure service", () => {
     );
     expect(photo?.adventureId).toBe(adventure.id);
 
-    const reaction = await service.addReaction(photo?.id ?? "", owner.id, "🔥");
+    const reaction = await service.addReaction(adventure.id, owner.id, "🔥");
     expect(reaction?.emoji).toBe("🔥");
 
-    const reactions = await service.listReactions(photo?.id ?? "");
+    const reactions = await service.listReactions(adventure.id);
     expect(reactions?.length).toBe(1);
 
-    const removed = await service.removeReaction(
-      photo?.id ?? "",
-      owner.id,
-      "🔥",
-    );
+    const removed = await service.removeReaction(adventure.id, owner.id, "🔥");
     expect(removed).toBe(true);
 
     const deleted = await service.deletePhoto(adventure.id, photo?.id ?? "");
     expect(deleted).toBe(true);
 
-    const reactionsAfterDelete = await service.listReactions(photo?.id ?? "");
-    expect(reactionsAfterDelete).toBeNull();
+    const reactionsAfterDelete = await service.listReactions(adventure.id);
+    expect(reactionsAfterDelete).toEqual([]);
   });
 
   it("returns null for missing adventure lookups", async () => {
