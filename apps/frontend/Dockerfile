@@ -1,4 +1,4 @@
-FROM oven/bun:1.2.2 AS build
+FROM oven/bun:1.3.2 AS build
 
 WORKDIR /app
 
@@ -6,7 +6,7 @@ WORKDIR /app
 COPY bun.lock package.json ./
 COPY apps/backend/package.json apps/backend/package.json
 COPY apps/frontend/package.json apps/frontend/package.json
-RUN bun install --frozen-lockfile --ignore-scripts
+RUN bun install --ignore-scripts
 
 ARG API_BASE_URL=https://backend.hsevibehack.hacks.intezya.ru
 ENV VITE_API_BASE_URL=${API_BASE_URL}
