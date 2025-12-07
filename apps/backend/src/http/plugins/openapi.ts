@@ -47,11 +47,27 @@ export const openapi = createElysiaOpenapi({
         description: "Информация о текущем пользователе.",
       },
       {
+        name: "Adventures",
+        description:
+          "Приключения, приглашения по токену, фото и реакции. Моки для фронтенда.",
+      },
+      {
         name: "Planner",
         description:
-          "События, задачи, привычки, генерации, друзья, фотоотчёты и фид.",
+          "Задачи, генерации заданий, приоритизация, друзья, фотоотчёты и фид.",
       },
     ],
+    components: {
+      securitySchemes: {
+        cookieAuth: {
+          type: "apiKey",
+          in: "cookie",
+          name: "auth",
+          description: "Auth cookie issued by /auth/login или /auth/register",
+        },
+      },
+    },
+    security: [{ cookieAuth: [] }],
     servers: [
       {
         url: "http://localhost:3000",

@@ -9,6 +9,7 @@ import {
   createAuthService,
 } from "../services/auth.service";
 import { authContracts } from "./contracts/auth.schemas";
+import { createCurrentUserMacro } from "./macros/current-user";
 
 export const AUTH_COOKIE_OPTIONS = {
   httpOnly: true,
@@ -26,7 +27,7 @@ export const createAuthController = (deps: { users: UserRepository }) => {
     prefix: "/auth",
     tags: ["Auth"],
   })
-    .use([jwt, authContracts])
+    .use([jwt, authContracts, createCurrentUserMacro(deps.users)])
     .post(
       "/register",
       async ({ set, jwt, body, cookie, status }) => {
@@ -50,6 +51,7 @@ export const createAuthController = (deps: { users: UserRepository }) => {
           summary: "Register a new user",
           description:
             "Creates a new user account and sets authentication cookie",
+          security: [],
         },
         response: {
           [StatusMap["No Content"]]: t.Void({
@@ -86,6 +88,7 @@ export const createAuthController = (deps: { users: UserRepository }) => {
         detail: {
           summary: "Login user",
           description: "Authenticate user and set authentication cookie",
+          security: [],
         },
         response: {
           [StatusMap["No Content"]]: t.Void({
@@ -100,23 +103,28 @@ export const createAuthController = (deps: { users: UserRepository }) => {
         },
       },
     )
-    .post(
-      "/logout",
-      async ({ set, cookie }) => {
-        cookie.auth.remove();
-        set.status = "No Content";
-      },
-      {
-        cookie: "AuthCookie",
-        detail: {
-          summary: "Logout current user",
-          description: "Clear authentication cookie",
+    .guard({ currentUser: true }, (app) =>
+      app.post(
+        "/logout",
+        async ({ set, cookie }) => {
+          cookie.auth.remove();
+          set.status = "No Content";
         },
-        response: {
-          [StatusMap["No Content"]]: t.Void({
-            description: "Logout success",
-          }),
+        {
+          cookie: "AuthCookieOptional",
+          detail: {
+            summary: "Logout current user",
+            description: "Clear authentication cookie",
+          },
+          response: {
+            [StatusMap["No Content"]]: t.Void({
+              description: "Logout success",
+            }),
+            [StatusMap.Unauthorized]: t.Void({
+              description: "Missing or invalid auth cookie",
+            }),
+          },
         },
-      },
+      ),
     );
 };
