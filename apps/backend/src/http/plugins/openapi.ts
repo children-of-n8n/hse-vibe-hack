@@ -1,3 +1,5 @@
+import path from "node:path";
+
 import { openapi as createElysiaOpenapi, fromTypes } from "@elysiajs/openapi";
 
 import { name, version } from "package.json";
@@ -75,5 +77,6 @@ export const openapi = createElysiaOpenapi({
       },
     ],
   },
-  references: fromTypes("./src/index.ts"),
+  // Always resolve from current working directory so it works in dev and docker
+  references: fromTypes(path.resolve("src/index.ts")),
 });
