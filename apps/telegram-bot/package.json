@@ -1,0 +1,21 @@
+{
+  "name": "@acme/telegram-bot",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "clean": "rm -rf node_modules",
+    "dev": "bun run --watch ./src/index.ts",
+    "format": "biome format --write",
+    "lint": "biome lint",
+    "postinstall": "cp -n .env.example .env || true",
+    "start": "bun run ./src/index.ts",
+    "tsc": "tsc --noEmit"
+  },
+  "dependencies": {
+    "elysia": "^1.4.18",
+    "grammy": "^1.33.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}
