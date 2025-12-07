@@ -52,6 +52,11 @@ jobs:
     needs: detect-changes
     if: (github.event_name == 'workflow_dispatch' && github.event.inputs.build_backend != 'false') || (github.event_name != 'workflow_dispatch' && needs.detect-changes.outputs.backend == 'true')
     runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
+      JWT_SECRET: ${{ secrets.TEST_JWT_SECRET }}
+      CORS_ORIGINS: ${{ secrets.TEST_CORS_ORIGINS }}
+      AUTO_MIGRATE: ${{ secrets.TEST_AUTO_MIGRATE }}
     services:
       postgres:
         image: postgres:16
@@ -66,11 +71,25 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-    env:
-      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Prepare backend .env from example and secrets
+        working-directory: apps/backend
+        run: |
+          cp .env.example .env
+          if [ -n "${{ secrets.TEST_DATABASE_URL }}" ]; then
+            echo "DATABASE_URL=${{ secrets.TEST_DATABASE_URL }}" >> .env
+          fi
+          if [ -n "${{ secrets.TEST_JWT_SECRET }}" ]; then
+            echo "JWT_SECRET=${{ secrets.TEST_JWT_SECRET }}" >> .env
+          fi
+          if [ -n "${{ secrets.TEST_CORS_ORIGINS }}" ]; then
+            echo "CORS_ORIGINS=${{ secrets.TEST_CORS_ORIGINS }}" >> .env
+          fi
+          if [ -n "${{ secrets.TEST_AUTO_MIGRATE }}" ]; then
+            echo "AUTO_MIGRATE=${{ secrets.TEST_AUTO_MIGRATE }}" >> .env
+          fi
       - name: Set up Bun
         uses: oven-sh/setup-bun@v1
         with:
