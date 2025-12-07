@@ -287,10 +287,10 @@ export const createAdventureService = (deps: {
   const signPhotoView = async (
     adventureId: string,
     photoId: string,
-    requesterId: string,
+    _requesterId: string,
   ) => {
     const adventure = await store.findById(adventureId);
-    if (!isParticipant(adventure, requesterId)) return null;
+    if (!adventure) return null;
 
     const photos = await store.listPhotos(adventureId);
     const photo = photos?.find((p) => p.id === photoId);
@@ -299,7 +299,16 @@ export const createAdventureService = (deps: {
     const key = keyFromPhotoUrl(photo.url, signer.baseUrl);
     if (!key) return null;
 
-    return signer.signGetUrl(key);
+    try {
+      return signer.signGetUrl(key);
+    } catch (error) {
+      console.error("Failed to sign photo view URL", {
+        adventureId,
+        photoId,
+        error,
+      });
+      return null;
+    }
   };
 
   const listPhotos = async (
@@ -310,31 +319,25 @@ export const createAdventureService = (deps: {
 
   const listPhotosForViewer = async (
     adventureId: string,
-    viewerId?: string,
+    _viewerId?: string,
   ): Promise<AdventurePhoto[] | null> => {
     const photos = await listPhotos(adventureId);
     if (!photos) return null;
 
-    const adventure =
-      viewerId && photos.length > 0 ? await store.findById(adventureId) : null;
-    const viewerIsParticipant =
-      typeof viewerId === "string" && isParticipant(adventure, viewerId);
-    const canViewSigned = viewerIsParticipant;
-
-    const withReactions = await Promise.all(
+    const withSignedUrls = await Promise.all(
       photos.map(async (photo) => {
-        const key =
-          canViewSigned && photo.url
-            ? keyFromPhotoUrl(photo.url, signer.baseUrl)
-            : null;
-        const signedUrl = key ? await signer.signGetUrl(key) : null;
-        return {
-          ...photo,
-          url: signedUrl?.url ?? photo.url,
-        };
+        const key = keyFromPhotoUrl(photo.url, signer.baseUrl);
+        if (!key) return photo;
+        try {
+          const signedUrl = await signer.signGetUrl(key);
+          return { ...photo, url: signedUrl.url };
+        } catch (error) {
+          console.error("Failed to sign photo URL", { key, error });
+          return photo;
+        }
       }),
     );
-    return withReactions;
+    return withSignedUrls;
   };
 
   const deletePhoto = async (

@@ -147,6 +147,12 @@ export type AdventureReactionInput = Static<
   typeof adventureReactionInputSchema
 >;
 
+export const adventuresResponseSchema = t.Object({
+  adventures: t.Array(adventureWithMediaSchema),
+});
+
+export type AdventuresResponse = Static<typeof adventuresResponseSchema>;
+
 export const adventureContracts = new Elysia({
   name: "adventure-contracts",
 }).model({
@@ -164,4 +170,5 @@ export const adventureContracts = new Elysia({
   AdventurePhotoUploadRequest: adventurePhotoUploadRequestSchema,
   AdventurePhotoUploadResponse: adventurePhotoUploadResponseSchema,
   AdventurePhotoConfirm: adventurePhotoConfirmSchema,
+  AdventuresResponse: adventuresResponseSchema,
 });
