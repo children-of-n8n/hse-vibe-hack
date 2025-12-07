@@ -8,7 +8,7 @@ import type {
 import { userContracts } from "./contracts/user.schemas";
 import { createCurrentUserMacro } from "./macros/current-user";
 
-const toUserResponse = (user: User) => ({
+export const toUserResponse = (user: User) => ({
   id: user.id,
   username: user.username,
   createdAt: user.createdAt,
