@@ -4,6 +4,8 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter, Route, Routes } from "react-router";
 
 import { HomePage } from "@acme/frontend/pages/home";
+import { LoginPage } from "@acme/frontend/pages/login";
+import { RegisterPage } from "@acme/frontend/pages/register";
 import { queryClient } from "@acme/frontend/shared/config/query";
 import { ThemeProvider } from "@acme/frontend/shared/ui/theme-provider";
 
@@ -22,6 +24,8 @@ const app = (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<HomePage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
           </Routes>
         </BrowserRouter>
       </QueryClientProvider>
