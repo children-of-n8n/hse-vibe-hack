@@ -1,7 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { Navigate } from "react-router";
 
+import type { AdventureWithMedia } from "@acme/backend/controllers/contracts/adventure.schemas";
+
 import { usersMeQueryOptions } from "@acme/frontend/entities/user";
+import { api } from "@acme/frontend/shared/config/api";
 import { ThemeToggler } from "@acme/frontend/shared/ui/theme-toggler";
 import { AdventureList } from "@acme/frontend/widgets/adventure-list/ui/adventure-list";
 import { CurrentUserMenu } from "@acme/frontend/widgets/current-user-menu";
@@ -10,6 +13,12 @@ import { BackToTopButton } from "./back-to-top-button";
 
 export function HomePage() {
   const { data: currentUser, isLoading } = useQuery(usersMeQueryOptions);
+  const { data: adventures } = useQuery<AdventureWithMedia[]>({
+    queryKey: ["adventures"],
+    queryFn: async () => {
+      return (await api.adventures.upcoming.get()).data?.adventures ?? [];
+    },
+  });
 
   if (isLoading) {
     return null;
@@ -26,7 +35,7 @@ export function HomePage() {
         <CurrentUserMenu currentUser={currentUser} />
       </div>
 
-      <AdventureList onAdd={() => {}} />
+      <AdventureList adventures={adventures} onAdd={() => {}} />
 
       <BackToTopButton />
     </div>
