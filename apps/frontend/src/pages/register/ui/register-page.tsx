@@ -17,12 +17,23 @@ export function RegisterPage() {
   }
 
   return (
-    <div className="flex size-full min-h-dvh min-w-dvw max-w-md p-4">
-      <div className="m-auto w-full max-w-md">
+    <div className="flex min-h-screen w-full items-center justify-center px-4 py-12">
+      <div className="w-full max-w-sm">
+        <div className="mb-12 text-center">
+          <h1 className="text font-bold text-5xl text-primary">
+            Friendventures
+          </h1>
+        </div>
         <RegisterForm />
-        <Button asChild className="mt-2 w-full">
-          <Link to="/login">К форме входа</Link>
-        </Button>
+
+        <div className="mt-6 text-center">
+          <p className="text-muted-foreground text-sm">
+            Уже есть аккаунт?{" "}
+            <Button asChild variant="link" className="h-auto p-0">
+              <Link to="/login">Войдите здесь</Link>
+            </Button>
+          </p>
+        </div>
       </div>
     </div>
   );
