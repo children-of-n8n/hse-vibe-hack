@@ -27,11 +27,11 @@ export interface AdventureStore {
   deletePhoto(adventureId: string, photoId: string): Promise<boolean>;
   addReaction(reaction: AdventureReaction): Promise<AdventureReaction | null>;
   removeReaction(
-    photoId: string,
+    adventureId: string,
     userId: string,
     emoji: string,
   ): Promise<boolean>;
-  listReactions(photoId: string): Promise<AdventureReaction[] | null>;
+  listReactions(adventureId: string): Promise<AdventureReaction[] | null>;
 }
 
 export const createInMemoryAdventureStore = (
@@ -121,19 +121,16 @@ export const createInMemoryAdventureStore = (
       const photo = photos.get(photoId);
       if (!photo || photo.adventureId !== adventureId) return false;
       photos.delete(photoId);
-      for (const [id, reaction] of [...reactions.entries()]) {
-        if (reaction.photoId === photoId) reactions.delete(id);
-      }
       return true;
     },
 
     async addReaction(reaction) {
-      const photo = photos.get(reaction.photoId);
-      if (!photo) return null;
+      const adventure = adventures.get(reaction.adventureId);
+      if (!adventure) return null;
 
       for (const [id, entry] of [...reactions.entries()]) {
         if (
-          entry.photoId === reaction.photoId &&
+          entry.adventureId === reaction.adventureId &&
           entry.userId === reaction.userId
         ) {
           reactions.delete(id);
@@ -146,11 +143,11 @@ export const createInMemoryAdventureStore = (
       return { ...stored };
     },
 
-    async removeReaction(photoId, userId, emoji) {
+    async removeReaction(adventureId, userId, emoji) {
       let removed = false;
       for (const [id, entry] of [...reactions.entries()]) {
         if (
-          entry.photoId === photoId &&
+          entry.adventureId === adventureId &&
           entry.userId === userId &&
           entry.emoji === emoji
         ) {
@@ -161,11 +158,11 @@ export const createInMemoryAdventureStore = (
       return removed;
     },
 
-    async listReactions(photoId) {
-      const photo = photos.get(photoId);
-      if (!photo) return null;
+    async listReactions(adventureId) {
+      const adventure = adventures.get(adventureId);
+      if (!adventure) return null;
       return [...reactions.values()]
-        .filter((r) => r.photoId === photoId)
+        .filter((r) => r.adventureId === adventureId)
         .map((r) => ({ ...r }));
     },
   };

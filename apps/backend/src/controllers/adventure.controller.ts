@@ -14,7 +14,6 @@ import {
   adventureParticipantSchema,
   adventurePhotoSchema,
   adventurePhotoUploadResponseSchema,
-  adventurePhotoWithReactionsSchema,
   adventureReactionSchema,
   adventureSchema,
   adventureWithMediaSchema,
@@ -37,11 +36,15 @@ export const createAdventureController = (deps: {
   ): Promise<AdventureWithMedia[]> =>
     Promise.all(
       adventures.map(async (adventure) => {
-        const photos = await service.listPhotosWithReactions(
-          adventure.id,
-          viewerId,
-        );
-        return { ...adventure, photos: photos ?? [] };
+        const [photos, reactions] = await Promise.all([
+          service.listPhotosWithReactions(adventure.id, viewerId),
+          service.listReactions(adventure.id),
+        ]);
+        return {
+          ...adventure,
+          photos: photos ?? [],
+          reactions: reactions ?? [],
+        };
       }),
     );
   const exampleAdventure: AdventureWithMedia = {
@@ -73,15 +76,15 @@ export const createAdventureController = (deps: {
           username: "alice",
         },
         createdAt: new Date("2024-01-01T00:00:00.000Z"),
-        reactions: [
-          {
-            id: "55555555-5555-5555-5555-555555555555",
-            photoId: "44444444-4444-4444-4444-444444444444",
-            userId: "33333333-3333-3333-3333-333333333333",
-            emoji: "🔥",
-            createdAt: new Date("2024-01-01T00:00:00.000Z"),
-          },
-        ],
+      },
+    ],
+    reactions: [
+      {
+        id: "55555555-5555-5555-5555-555555555555",
+        adventureId: "11111111-1111-1111-1111-111111111111",
+        userId: "33333333-3333-3333-3333-333333333333",
+        emoji: "🔥",
+        createdAt: new Date("2024-01-01T00:00:00.000Z"),
       },
     ],
   };
@@ -441,7 +444,7 @@ export const createAdventureController = (deps: {
             params: t.Object({ id: t.String({ format: "uuid" }) }),
             response: {
               [StatusMap.OK]: t.Object({
-                photos: t.Array(adventurePhotoWithReactionsSchema),
+                photos: t.Array(adventurePhotoSchema),
               }),
               [StatusMap["Not Found"]]: t.Void(),
             },
@@ -510,10 +513,10 @@ export const createAdventureController = (deps: {
           },
         )
         .post(
-          "/photos/:photoId/reactions",
+          "/:id/reactions",
           async ({ currentUser, params, body, set }) => {
             const reaction = await service.addReaction(
-              params.photoId,
+              params.id,
               currentUser.id,
               (body as { emoji: string }).emoji,
             );
@@ -525,23 +528,23 @@ export const createAdventureController = (deps: {
             return reaction;
           },
           {
-            params: t.Object({ photoId: t.String({ format: "uuid" }) }),
+            params: t.Object({ id: t.String({ format: "uuid" }) }),
             body: "AdventureReactionInput",
             response: {
               [StatusMap.Created]: adventureReactionSchema,
               [StatusMap["Not Found"]]: t.Void(),
             },
             detail: {
-              summary: "Add reaction",
-              description: "Поставить эмодзи на фото.",
+              summary: "Add reaction to adventure",
+              description: "Поставить эмодзи на приключение.",
             },
           },
         )
         .delete(
-          "/photos/:photoId/reactions/:emoji",
+          "/:id/reactions/:emoji",
           async ({ currentUser, params, set }) => {
             const removed = await service.removeReaction(
-              params.photoId,
+              params.id,
               currentUser.id,
               params.emoji,
             );
@@ -549,7 +552,7 @@ export const createAdventureController = (deps: {
           },
           {
             params: t.Object({
-              photoId: t.String({ format: "uuid" }),
+              id: t.String({ format: "uuid" }),
               emoji: t.String({ minLength: 1, maxLength: 8 }),
             }),
             response: {
@@ -557,15 +560,15 @@ export const createAdventureController = (deps: {
               [StatusMap["Not Found"]]: t.Void(),
             },
             detail: {
-              summary: "Remove reaction",
+              summary: "Remove reaction from adventure",
               description: "Удалить свою реакцию.",
             },
           },
         )
         .get(
-          "/photos/:photoId/reactions",
+          "/:id/reactions",
           async ({ params, set }) => {
-            const reactions = await service.listReactions(params.photoId);
+            const reactions = await service.listReactions(params.id);
             if (!reactions) {
               set.status = "Not Found";
               return;
@@ -573,7 +576,7 @@ export const createAdventureController = (deps: {
             return { reactions };
           },
           {
-            params: t.Object({ photoId: t.String({ format: "uuid" }) }),
+            params: t.Object({ id: t.String({ format: "uuid" }) }),
             response: {
               [StatusMap.OK]: t.Object({
                 reactions: t.Array(adventureReactionSchema),
@@ -581,8 +584,8 @@ export const createAdventureController = (deps: {
               [StatusMap["Not Found"]]: t.Void(),
             },
             detail: {
-              summary: "List reactions for photo",
-              description: "Реакции на фото.",
+              summary: "List reactions for adventure",
+              description: "Реакции на приключение.",
             },
           },
         ),

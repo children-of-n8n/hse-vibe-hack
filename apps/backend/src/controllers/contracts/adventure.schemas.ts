@@ -94,7 +94,7 @@ export type AdventurePhoto = Static<typeof adventurePhotoSchema>;
 
 export const adventureReactionSchema = t.Object({
   id: t.String({ format: "uuid" }),
-  photoId: adventurePhotoSchema.properties.id,
+  adventureId: adventureSchema.properties.id,
   userId: adventureParticipantSchema.properties.id,
   emoji: t.String({ minLength: 1, maxLength: 8 }),
   createdAt: t.Date(),
@@ -102,18 +102,10 @@ export const adventureReactionSchema = t.Object({
 
 export type AdventureReaction = Static<typeof adventureReactionSchema>;
 
-export const adventurePhotoWithReactionsSchema = t.Object({
-  ...adventurePhotoSchema.properties,
-  reactions: t.Array(adventureReactionSchema),
-});
-
-export type AdventurePhotoWithReactions = Static<
-  typeof adventurePhotoWithReactionsSchema
->;
-
 export const adventureWithMediaSchema = t.Object({
   ...adventureSchema.properties,
-  photos: t.Array(adventurePhotoWithReactionsSchema, { default: [] }),
+  photos: t.Array(adventurePhotoSchema, { default: [] }),
+  reactions: t.Array(adventureReactionSchema, { default: [] }),
 });
 
 export type AdventureWithMedia = Static<typeof adventureWithMediaSchema>;
@@ -164,7 +156,6 @@ export const adventureContracts = new Elysia({
   AdventureShare: adventureShareSchema,
   AdventureJoin: adventureJoinSchema,
   AdventurePhoto: adventurePhotoSchema,
-  AdventurePhotoWithReactions: adventurePhotoWithReactionsSchema,
   AdventureWithMedia: adventureWithMediaSchema,
   AdventureReaction: adventureReactionSchema,
   AdventureReactionInput: adventureReactionInputSchema,

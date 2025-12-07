@@ -77,7 +77,7 @@ const toReaction = (
   row: typeof adventureReactions.$inferSelect,
 ): AdventureReaction => ({
   id: row.id,
-  photoId: row.photoId,
+  adventureId: row.adventureId,
   userId: row.userId,
   emoji: row.emoji,
   createdAt: row.createdAt ?? new Date(),
@@ -317,10 +317,10 @@ export const createPostgresAdventureStore = (): AdventureStore => {
     },
 
     async addReaction(reaction) {
-      const photo = await db.query.adventurePhotos.findFirst({
-        where: eq(adventurePhotos.id, reaction.photoId),
+      const adventure = await db.query.adventures.findFirst({
+        where: eq(adventures.id, reaction.adventureId),
       });
-      if (!photo) return null;
+      if (!adventure) return null;
 
       const id = reaction.id ?? randomUUID();
       const result = await db.transaction(async (tx) => {
@@ -328,7 +328,7 @@ export const createPostgresAdventureStore = (): AdventureStore => {
           .delete(adventureReactions)
           .where(
             and(
-              eq(adventureReactions.photoId, reaction.photoId),
+              eq(adventureReactions.adventureId, reaction.adventureId),
               eq(adventureReactions.userId, reaction.userId),
             ),
           );
@@ -337,7 +337,7 @@ export const createPostgresAdventureStore = (): AdventureStore => {
           .insert(adventureReactions)
           .values({
             id,
-            photoId: reaction.photoId,
+            adventureId: reaction.adventureId,
             userId: reaction.userId,
             emoji: reaction.emoji,
             createdAt: reaction.createdAt,
@@ -350,12 +350,12 @@ export const createPostgresAdventureStore = (): AdventureStore => {
       return result ? toReaction(result) : null;
     },
 
-    async removeReaction(photoId, userId, emoji) {
+    async removeReaction(adventureId, userId, emoji) {
       const [deleted] = await db
         .delete(adventureReactions)
         .where(
           and(
-            eq(adventureReactions.photoId, photoId),
+            eq(adventureReactions.adventureId, adventureId),
             eq(adventureReactions.userId, userId),
             eq(adventureReactions.emoji, emoji),
           ),
@@ -364,16 +364,16 @@ export const createPostgresAdventureStore = (): AdventureStore => {
       return Boolean(deleted);
     },
 
-    async listReactions(photoId) {
-      const photo = await db.query.adventurePhotos.findFirst({
-        where: eq(adventurePhotos.id, photoId),
+    async listReactions(adventureId) {
+      const adventure = await db.query.adventures.findFirst({
+        where: eq(adventures.id, adventureId),
       });
-      if (!photo) return null;
+      if (!adventure) return null;
 
       const rows = await db
         .select()
         .from(adventureReactions)
-        .where(eq(adventureReactions.photoId, photoId));
+        .where(eq(adventureReactions.adventureId, adventureId));
 
       return rows.map(toReaction);
     },

@@ -5,7 +5,6 @@ import type {
   AdventureCreate,
   AdventureParticipant,
   AdventurePhoto,
-  AdventurePhotoWithReactions,
   AdventureReaction,
   AdventureStatus,
 } from "@acme/backend/controllers/contracts/adventure.schemas";
@@ -305,10 +304,10 @@ export const createAdventureService = (deps: {
     return store.listPhotos(adventureId);
   };
 
-  const listPhotosWithReactions = async (
+  const listPhotosForViewer = async (
     adventureId: string,
     viewerId?: string,
-  ): Promise<AdventurePhotoWithReactions[] | null> => {
+  ): Promise<AdventurePhoto[] | null> => {
     const photos = await listPhotos(adventureId);
     if (!photos) return null;
 
@@ -321,7 +320,6 @@ export const createAdventureService = (deps: {
 
     const withReactions = await Promise.all(
       photos.map(async (photo) => {
-        const reactions = (await listReactions(photo.id)) ?? [];
         const key =
           canViewSigned && photo.url
             ? keyFromPhotoUrl(photo.url, signer.baseUrl)
@@ -330,7 +328,6 @@ export const createAdventureService = (deps: {
         return {
           ...photo,
           url: signedUrl?.url ?? photo.url,
-          reactions,
         };
       }),
     );
@@ -345,33 +342,51 @@ export const createAdventureService = (deps: {
   };
 
   const addReaction = async (
-    photoId: string,
+    adventureId: string,
     userId: string,
     emoji: string,
   ): Promise<AdventureReaction | null> => {
+    const adventure = await store.findById(adventureId);
+    if (!adventure) return null;
+    const isParticipant = adventure.participants.some((p) => p.id === userId);
+    if (!isParticipant) return null;
+
     const reaction: AdventureReaction = {
       id: randomUUID(),
-      photoId,
+      adventureId,
       userId,
       emoji,
       createdAt: now(),
     };
 
-    return store.addReaction(reaction);
+    const saved = await store.addReaction(reaction);
+    if (saved) {
+      await invalidateCaches(adventure);
+    }
+    return saved;
   };
 
   const removeReaction = async (
-    photoId: string,
+    adventureId: string,
     userId: string,
     emoji: string,
   ): Promise<boolean> => {
-    return store.removeReaction(photoId, userId, emoji);
+    const adventure = await store.findById(adventureId);
+    if (!adventure) return false;
+    const isParticipant = adventure.participants.some((p) => p.id === userId);
+    if (!isParticipant) return false;
+
+    const removed = await store.removeReaction(adventureId, userId, emoji);
+    if (removed) {
+      await invalidateCaches(adventure);
+    }
+    return removed;
   };
 
   const listReactions = async (
-    photoId: string,
+    adventureId: string,
   ): Promise<AdventureReaction[] | null> => {
-    return store.listReactions(photoId);
+    return store.listReactions(adventureId);
   };
 
   const signPhotoUpload = async (adventureId: string, filename: string) => {
@@ -409,7 +424,7 @@ export const createAdventureService = (deps: {
     removeReaction,
     listReactions,
     signPhotoUpload,
-    listPhotosWithReactions,
+    listPhotosWithReactions: listPhotosForViewer,
     listFriends,
     signPhotoView,
   };

@@ -13,6 +13,9 @@ services:
       - S3_ENDPOINT=${S3_ENDPOINT}
       - S3_PUBLIC_BASE_URL=${S3_PUBLIC_BASE_URL}
       - APP_BASE_URL=${APP_BASE_URL:-http://localhost:3000}
+      - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-http://otel-collector:4318}
+      - OTEL_EXPORTER_OTLP_HEADERS=${OTEL_EXPORTER_OTLP_HEADERS}
+      - OTEL_SERVICE_NAME=${OTEL_SERVICE_NAME:-hse-vibe-backend}
     networks:
       - application
     depends_on:
@@ -46,6 +49,44 @@ services:
       - "127.0.0.1:51294:6379"
     networks:
       - application
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.112.0
+    command: ["--config=/etc/otelcol/config.yaml"]
+    volumes:
+      - ./otel-collector.yaml:/etc/otelcol/config.yaml:ro
+    ports:
+      - "127.0.0.1:4318:4318"
+      - "127.0.0.1:8888:8888"
+    networks:
+      - application
+    depends_on:
+      jaeger:
+        condition: service_started
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.58
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    ports:
+      - "127.0.0.1:16686:16686"
+    networks:
+      - application
+
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "127.0.0.1:9090:9090"
+    networks:
+      - application
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - backend
 
 volumes:
   pgdata:
