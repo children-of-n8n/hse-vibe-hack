@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { Navigate } from "react-router";
 
 import type { AdventureWithMedia } from "@acme/backend/controllers/contracts/adventure.schemas";
@@ -18,6 +18,9 @@ export function HomePage() {
     queryFn: async () => {
       return (await api.adventures.upcoming.get()).data?.adventures ?? [];
     },
+    placeholderData: keepPreviousData,
+    refetchOnWindowFocus: false,
+    staleTime: Infinity,
   });
 
   if (isLoading) {

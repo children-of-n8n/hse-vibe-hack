@@ -1,4 +1,4 @@
-import { ChevronDown, Plus } from "lucide-react";
+import { Cannabis, ChevronDown, Plus } from "lucide-react";
 import { Link } from "react-router";
 
 import { Button } from "@acme/frontend/shared/ui/button";
@@ -8,7 +8,7 @@ export function AdventureListPlaceholder({ onAdd }: { onAdd: VoidFunction }) {
     <div className="adventure-card relative flex h-screen w-full snap-start snap-always flex-col items-center justify-center">
       <div className="my-auto flex flex-col items-center justify-center">
         <div className="mb-8 flex h-32 w-32 animate-float items-center justify-center rounded-3xl border border-border/30 bg-secondary/50">
-          <Plus className="size-12 text-muted-foreground" />
+          <Cannabis className="size-22 text-muted-foreground text-primary" />
         </div>
         {/* Text */}
         <p className="mb-10 max-w-xs text-lg text-muted-foreground">
