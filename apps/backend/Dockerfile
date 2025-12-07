@@ -20,7 +20,7 @@ WORKDIR /app/apps/backend
 # Type-check TS sources
 RUN bun run tsc
 # Produce self-contained binary (Bun runtime bundled)
-RUN bun build ./src/index.ts --compile --outfile server
+RUN bun build ./src/server.ts --compile --outfile server
 
 FROM gcr.io/distroless/base-debian12 AS runtime
 WORKDIR /app
