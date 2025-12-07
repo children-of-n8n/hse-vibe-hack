@@ -1,6 +1,7 @@
 import { Elysia, InvertedStatusMap, redirect } from "elysia";
 
 import { createAuthController } from "@acme/backend/controllers/auth.controller";
+import { createPlannerController } from "@acme/backend/controllers/planner.controller";
 import { createUserController } from "@acme/backend/controllers/user.controller";
 import { runMigrationsIfNeeded } from "@acme/backend/db/migrate-on-start";
 import { PostgresUserRepository } from "@acme/backend/domain/users/user.postgres-repository";
@@ -30,6 +31,7 @@ export const app = new Elysia()
     cors,
     openapi,
     createAuthController({ users: userRepository }),
+    createPlannerController({ users: userRepository }),
     createUserController({ users: userRepository }),
   ])
   .get("/health", () => "OK")
