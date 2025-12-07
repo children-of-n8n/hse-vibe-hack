@@ -2,9 +2,11 @@ import { useQuery } from "@tanstack/react-query";
 import { Navigate } from "react-router";
 
 import { usersMeQueryOptions } from "@acme/frontend/entities/user";
-import { Button } from "@acme/frontend/shared/ui/button";
 import { ThemeToggler } from "@acme/frontend/shared/ui/theme-toggler";
+import { AdventureList } from "@acme/frontend/widgets/adventure-list/ui/adventure-list";
 import { CurrentUserMenu } from "@acme/frontend/widgets/current-user-menu";
+
+import { BackToTopButton } from "./back-to-top-button";
 
 export function HomePage() {
   const { data: currentUser, isLoading } = useQuery(usersMeQueryOptions);
@@ -13,19 +15,20 @@ export function HomePage() {
     return null;
   }
 
-  if (currentUser === null) {
+  if (!currentUser) {
     return <Navigate to="/login" replace />;
   }
 
   return (
-    <div className="flex flex-col gap-4 p-4">
-      <div className="flex justify-between">
+    <div className="relative flex min-h-dvh flex-col gap-4">
+      <div className="absolute top-4 right-4 left-4 flex justify-between">
         <ThemeToggler />
-
-        {currentUser && <CurrentUserMenu currentUser={currentUser} />}
+        <CurrentUserMenu currentUser={currentUser} />
       </div>
 
-      {currentUser && <Button>Взять приключение</Button>}
+      <AdventureList onAdd={() => {}} />
+
+      <BackToTopButton />
     </div>
   );
 }
