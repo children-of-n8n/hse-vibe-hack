@@ -67,15 +67,7 @@ export const openapi = createElysiaOpenapi({
     },
     security: [{ cookieAuth: [] }],
     servers: (() => {
-      const base =
-        process.env.APP_BASE_URL ??
-        process.env.BACKEND_BASE_URL ??
-        "http://localhost:3000";
       return [
-        {
-          url: base,
-          description: "Текущий backend (APP_BASE_URL/BACKEND_BASE_URL)",
-        },
         {
           url: "http://localhost:3000",
           description: "Локальная разработка",
