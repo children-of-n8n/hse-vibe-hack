@@ -2,10 +2,10 @@
 .idea
 !.run
 **.env
-!**.env.example
+!deployment/.env.example
 !.run
 **.env
-!**.env.example
+!deployment/.env.example
 
 # dependencies (bun install)
 node_modules

@@ -5,7 +5,10 @@ const backendRoot = process.cwd();
 const migrationsFolder = `${backendRoot}/src/db/migrations`;
 
 export const runMigrationsIfNeeded = async () => {
-  if (AUTO_MIGRATE.toLowerCase() === "false") {
+  if (
+    process.env.NODE_ENV === "test" ||
+    AUTO_MIGRATE.toLowerCase() === "false"
+  ) {
     return;
   }
 

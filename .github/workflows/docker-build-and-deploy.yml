@@ -43,9 +43,45 @@ jobs:
               - "bun.lock"
               - "package.json"
 
+  backend-tests:
+    name: Test backend
+    needs: detect-changes
+    if: (github.event_name == 'workflow_dispatch' && github.event.inputs.build_backend != 'false') || (github.event_name != 'workflow_dispatch' && needs.detect-changes.outputs.backend == 'true')
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: 1.1.30
+      - name: Install dependencies
+        run: bun install --frozen-lockfile --ignore-scripts
+      - name: Run backend tests
+        working-directory: apps/backend
+        run: bun test
+
   backend:
     name: Build backend image
-    needs: detect-changes
+    needs:
+      - detect-changes
+      - backend-tests
     if: (github.event_name == 'workflow_dispatch' && github.event.inputs.build_backend != 'false') || (github.event_name != 'workflow_dispatch' && needs.detect-changes.outputs.backend == 'true')
     runs-on: ubuntu-latest
     env:
