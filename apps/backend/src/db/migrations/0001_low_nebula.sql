@@ -1,5 +1,5 @@
 CREATE TYPE "public"."crazy_status" AS ENUM('pending', 'in_progress', 'completed');--> statement-breakpoint
-CREATE TYPE "public"."report_task_type" AS ENUM('todo', 'crazy', 'event', 'habit');--> statement-breakpoint
+CREATE TYPE "public"."report_task_type" AS ENUM('todo', 'crazy');--> statement-breakpoint
 CREATE TYPE "public"."todo_status" AS ENUM('pending', 'in_progress', 'completed');--> statement-breakpoint
 CREATE TABLE "planner_crazy_task_friends" (
 	"task_id" uuid NOT NULL,
@@ -52,10 +52,7 @@ CREATE TABLE "planner_todos" (
 	"description" text,
 	"due_start" timestamp,
 	"due_end" timestamp,
-	"recurrence" jsonb,
 	"reminder_minutes" integer DEFAULT 15 NOT NULL,
-	"source_event_ids" text[],
-	"promotes_habit" boolean DEFAULT false NOT NULL,
 	"tags" text[],
 	"status" "todo_status" DEFAULT 'pending' NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL,

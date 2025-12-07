@@ -1,7 +1,5 @@
 import {
-  boolean,
   integer,
-  jsonb,
   pgEnum,
   pgTable,
   primaryKey,
@@ -29,10 +27,7 @@ export const plannerTodos = pgTable("planner_todos", {
   description: text("description"),
   dueStart: timestamp("due_start"),
   dueEnd: timestamp("due_end"),
-  recurrence: jsonb("recurrence"),
   reminderMinutes: integer("reminder_minutes").notNull().default(15),
-  sourceEventIds: text("source_event_ids").array(),
-  promotesHabit: boolean("promotes_habit").notNull().default(false),
   tags: text("tags").array(),
   status: todoStatusEnum("status").notNull().default("pending"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -103,12 +98,7 @@ export const plannerCrazyTaskFriends = pgTable(
   }),
 );
 
-export const reportTaskTypeEnum = pgEnum("report_task_type", [
-  "todo",
-  "crazy",
-  "event",
-  "habit",
-]);
+export const reportTaskTypeEnum = pgEnum("report_task_type", ["todo", "crazy"]);
 
 export const plannerPhotoReports = pgTable("planner_photo_reports", {
   id: uuid("id").primaryKey().defaultRandom(),

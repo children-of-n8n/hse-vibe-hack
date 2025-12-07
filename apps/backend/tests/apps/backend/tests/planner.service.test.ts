@@ -8,8 +8,6 @@ const windowOf = (startIso: string, minutes: number) => {
   return { start, end } as const;
 };
 
-const recurrenceNone = { type: "none" as const };
-
 describe("planner service", () => {
   it("prioritizes tasks by importance and effort", async () => {
     const planner = createPlannerService();
@@ -149,7 +147,6 @@ describe("planner service", () => {
     const userId = "u6";
     const todo = await planner.createTodo(userId, {
       title: "Task",
-      recurrence: recurrenceNone,
     });
 
     const updated = await planner.updateTodo(userId, todo.id, {
