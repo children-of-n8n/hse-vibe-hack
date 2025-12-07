@@ -34,7 +34,30 @@ export const openapi = createElysiaOpenapi({
     info: {
       title: name,
       version: version,
+      description:
+        "API для планировщика: аутентификация, пользователи, планер (события, задачи, привычки, друзья, фотоотчёты и фид).",
     },
+    tags: [
+      {
+        name: "Auth",
+        description: "Регистрация, логин, логаут и авторизационные куки.",
+      },
+      {
+        name: "Users",
+        description: "Информация о текущем пользователе.",
+      },
+      {
+        name: "Planner",
+        description:
+          "События, задачи, привычки, генерации, друзья, фотоотчёты и фид.",
+      },
+    ],
+    servers: [
+      {
+        url: "http://localhost:3000",
+        description: "Локальная среда разработки",
+      },
+    ],
   },
   references: fromTypes("./src/index.ts"),
 });
