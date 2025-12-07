@@ -126,69 +126,6 @@ describe("planner service", () => {
     expect(response.task.description).toContain("центр");
   });
 
-  it("exports calendar with events, todos and habits", async () => {
-    const planner = createPlannerService();
-    const userId = "u2";
-
-    await planner.createEvent(userId, {
-      title: "Meeting",
-      description: "Discuss roadmap",
-      window: windowOf("2024-01-01T10:00:00Z", 60),
-      recurrence: recurrenceNone,
-    });
-
-    await planner.createTodo(userId, {
-      title: "Ship feature",
-      due: windowOf("2024-01-02T09:00:00Z", 30),
-      recurrence: recurrenceNone,
-    });
-
-    await planner.createHabit(userId, {
-      title: "Stretch",
-      cadence: { period: "day", target: 1 },
-    });
-
-    const ics = await planner.exportCalendar(userId);
-
-    expect(ics).toContain("BEGIN:VCALENDAR");
-    expect(ics).toContain("SUMMARY:Meeting");
-    expect(ics).toContain("Ship feature");
-    expect(ics).toContain("Stretch");
-  });
-
-  it("normalizes reversed windows when exporting ICS", async () => {
-    const planner = createPlannerService();
-    const userId = "u2-ics";
-    await planner.createEvent(userId, {
-      title: "Reverse",
-      window: {
-        start: new Date("2024-01-01T12:00:00Z"),
-        end: new Date("2024-01-01T10:00:00Z"),
-      },
-      recurrence: recurrenceNone,
-    });
-
-    const ics = await planner.exportCalendar(userId);
-    const lines = ics.split(/\r?\n/);
-    const startLine = lines
-      .find((line) => line.startsWith("DTSTART:"))
-      ?.replace("DTSTART:", "");
-    const endLine = lines
-      .find((line) => line.startsWith("DTEND:"))
-      ?.replace("DTEND:", "");
-
-    expect(startLine && endLine).toBeTruthy();
-    const toDate = (value: string) => {
-      const [, y, m, d, hh, mm, ss] =
-        value.match(/(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z/) ?? [];
-      return new Date(`${y}-${m}-${d}T${hh}:${mm}:${ss}Z`);
-    };
-
-    const start = toDate(startLine!);
-    const end = toDate(endLine!);
-    expect(start.getTime()).toBeLessThan(end.getTime());
-  });
-
   it("generates random tasks with mood and focus in description", async () => {
     const planner = createPlannerService();
     const response = await planner.generateRandomTasks("u3", {
@@ -205,35 +142,6 @@ describe("planner service", () => {
     const planner = createPlannerService();
     const response = await planner.generateRandomTasks("u4", {});
     expect(response.tasks).toHaveLength(3);
-  });
-
-  it("filters events by range and normalizes event window", async () => {
-    const planner = createPlannerService();
-    const userId = "u5";
-    await planner.createEvent(userId, {
-      title: "Inside",
-      window: {
-        start: new Date("2024-01-02T10:00:00Z"),
-        end: new Date("2024-01-02T09:00:00Z"),
-      },
-      recurrence: recurrenceNone,
-    });
-    await planner.createEvent(userId, {
-      title: "Outside",
-      window: windowOf("2024-02-01T10:00:00Z", 60),
-      recurrence: recurrenceNone,
-    });
-
-    const events = await planner.listEvents(userId, {
-      from: new Date("2024-01-01T00:00:00Z"),
-      to: new Date("2024-01-10T00:00:00Z"),
-    });
-
-    expect(events).toHaveLength(1);
-    expect(events[0].title).toBe("Inside");
-    expect(events[0].window.start.getTime()).toBeLessThan(
-      events[0].window.end.getTime(),
-    );
   });
 
   it("updates todo status and returns null when not found", async () => {
@@ -253,58 +161,6 @@ describe("planner service", () => {
       status: "completed",
     });
     expect(missing).toBeNull();
-  });
-
-  it("deletes habit and returns false when missing", async () => {
-    const planner = createPlannerService();
-    const userId = "u7";
-    const habit = await planner.createHabit(userId, {
-      title: "Read",
-      cadence: { period: "day", target: 1 },
-    });
-
-    const deleted = await planner.deleteHabit(userId, habit.id);
-    expect(deleted).toBe(true);
-    const missing = await planner.deleteHabit(userId, habit.id);
-    expect(missing).toBe(false);
-  });
-
-  it("merges profile updates and reminder defaults", async () => {
-    const planner = createPlannerService();
-    const userId = "u8";
-
-    const updated = await planner.updateProfile(userId, {
-      onboardingState: "completed",
-      defaultReminders: { event: { minutesBefore: 5 } },
-    });
-
-    expect(updated.onboardingState).toBe("completed");
-    expect(updated.defaultReminders.event.minutesBefore).toBe(5);
-    expect(updated.defaultReminders.todo.minutesBefore).toBe(15);
-  });
-
-  it("builds plan page with fallback windows for todos and habits", async () => {
-    const planner = createPlannerService();
-    const userId = "u9";
-    await planner.createTodo(userId, {
-      title: "Todo",
-      recurrence: recurrenceNone,
-    });
-    await planner.createHabit(userId, {
-      title: "Habit",
-      cadence: { period: "week", target: 3 },
-    });
-
-    const plan = await planner.getPlanPage(userId, {
-      from: new Date("2024-03-01T00:00:00Z"),
-      to: new Date("2024-03-02T00:00:00Z"),
-    });
-
-    expect(plan.items.length).toBeGreaterThanOrEqual(2);
-    plan.items.forEach((item) => {
-      expect(item.window.start).toBeInstanceOf(Date);
-      expect(item.window.end).toBeInstanceOf(Date);
-    });
   });
 
   it("updates crazy task status and returns null when missing", async () => {

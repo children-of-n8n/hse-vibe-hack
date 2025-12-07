@@ -47,35 +47,6 @@ export const plannerTimeWindowSchema = t.Object({
 
 export type PlannerTimeWindow = Static<typeof plannerTimeWindowSchema>;
 
-export const plannerEventInputSchema = t.Object({
-  title: t.String({ minLength: 1, maxLength: 120 }),
-  description: t.Optional(t.String({ maxLength: 1024 })),
-  window: plannerTimeWindowSchema,
-  recurrence: plannerRecurrenceSchema,
-  reminder: t.Optional(plannerReminderSchema),
-  timezone: t.Optional(t.String({ maxLength: 64 })),
-  tags: t.Optional(t.Array(t.String({ maxLength: 32 }))),
-});
-
-export type PlannerEventInput = Static<typeof plannerEventInputSchema>;
-
-export const plannerEventSchema = t.Object({
-  id: t.String({ format: "uuid" }),
-  title: plannerEventInputSchema.properties.title,
-  description: plannerEventInputSchema.properties.description,
-  window: plannerTimeWindowSchema,
-  recurrence: plannerRecurrenceSchema,
-  reminder: plannerEventInputSchema.properties.reminder,
-  timezone: plannerEventInputSchema.properties.timezone,
-  tags: plannerEventInputSchema.properties.tags,
-});
-
-export type PlannerEvent = Static<typeof plannerEventSchema>;
-
-export const plannerEventUpdateSchema = t.Partial(plannerEventInputSchema);
-
-export type PlannerEventUpdate = Static<typeof plannerEventUpdateSchema>;
-
 export const plannerTodoInputSchema = t.Object({
   title: t.String({ minLength: 1, maxLength: 120 }),
   description: t.Optional(t.String({ maxLength: 1024 })),
@@ -180,9 +151,7 @@ export const plannerHabitUpdateSchema = t.Intersect([
 export type PlannerHabitUpdate = Static<typeof plannerHabitUpdateSchema>;
 
 export const plannerOverviewResponseSchema = t.Object({
-  events: t.Array(plannerEventSchema),
   todos: t.Array(plannerTodoSchema),
-  habits: t.Array(plannerHabitSchema),
 });
 
 export type PlannerOverviewResponse = Static<
@@ -436,25 +405,13 @@ export const plannerContracts = new Elysia({ name: "planner-contracts" }).model(
     PlannerReminder: plannerReminderSchema,
     PlannerRecurrence: plannerRecurrenceSchema,
     PlannerTimeWindow: plannerTimeWindowSchema,
-    PlannerEventInput: plannerEventInputSchema,
-    PlannerEvent: plannerEventSchema,
-    PlannerEventUpdateBody: plannerEventUpdateSchema,
     PlannerTodoInput: plannerTodoInputSchema,
     PlannerTodo: plannerTodoSchema,
     PlannerTodoUpdateBody: plannerTodoUpdateSchema,
-    PlannerHabitInput: plannerHabitInputSchema,
-    PlannerHabit: plannerHabitSchema,
-    PlannerHabitUpdateBody: plannerHabitUpdateSchema,
-    PlannerOverviewResponse: plannerOverviewResponseSchema,
-    PlannerPlanItem: plannerPlanItemSchema,
-    PlannerPlanPageResponse: plannerPlanPageResponseSchema,
-    PlannerProfile: plannerProfileSchema,
-    PlannerProfileUpdateBody: plannerProfileUpdateSchema,
     PlannerRandomTaskRequest: plannerRandomTaskRequestSchema,
     PlannerRandomTask: plannerRandomTaskSchema,
     PlannerRandomTaskResponse: plannerRandomTaskResponseSchema,
     PlannerIdParams: plannerIdParamsSchema,
-    PlannerCalendarExport: plannerCalendarExportSchema,
     PlannerPrioritizeRequest: plannerPrioritizeRequestSchema,
     PlannerPrioritizeResponse: plannerPrioritizeResponseSchema,
     PlannerFriend: plannerFriendSchema,

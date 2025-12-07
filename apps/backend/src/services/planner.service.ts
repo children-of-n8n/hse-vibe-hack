@@ -5,24 +5,13 @@ import type {
   PlannerCrazyTaskRequest,
   PlannerCrazyTaskResponse,
   PlannerCrazyTaskStatus,
-  PlannerEvent,
-  PlannerEventInput,
-  PlannerEventUpdate,
   PlannerFeedResponse,
   PlannerFriend,
   PlannerFriendInvite,
-  PlannerHabit,
-  PlannerHabitInput,
-  PlannerHabitUpdate,
-  PlannerOverviewResponse,
   PlannerPhotoReport,
   PlannerPhotoReportInput,
-  PlannerPlanItem,
-  PlannerPlanPageResponse,
   PlannerPrioritizeRequest,
   PlannerPrioritizeResponse,
-  PlannerProfile,
-  PlannerProfileUpdate,
   PlannerRandomTask,
   PlannerRandomTaskRequest,
   PlannerRandomTaskResponse,
@@ -35,26 +24,14 @@ import type {
 } from "@acme/backend/controllers/contracts/planner.schemas";
 
 type PlannerState = {
-  events: PlannerEvent[];
   todos: PlannerTodo[];
-  habits: PlannerHabit[];
-  profile: PlannerProfile;
   friends: PlannerFriend[];
   invites: PlannerFriendInvite[];
   crazyTasks: PlannerCrazyTask[];
   photoReports: PlannerPhotoReport[];
 };
 
-const DEFAULT_PROFILE: PlannerProfile = {
-  timezone: "UTC",
-  onboardingState: "in_progress",
-  defaultReminders: {
-    event: { minutesBefore: 30 },
-    todo: { minutesBefore: 15 },
-    habit: { minutesBefore: 60 },
-  },
-  calendarExportEnabled: true,
-};
+const DEFAULT_TODO_REMINDER: PlannerReminder = { minutesBefore: 15 };
 
 const SUGGESTION_POOL: PlannerRandomTask[] = [
   {
@@ -127,39 +104,10 @@ const windowOverlapsRange = (
   return true;
 };
 
-const fallbackWindow = (range?: PlannerRangeQuery): PlannerTimeWindow => {
-  const start = range?.from ? new Date(range.from) : new Date();
-  const end = range?.to
-    ? new Date(range.to)
-    : new Date(start.getTime() + 60 * 60 * 1000);
-
-  return normalizeWindow({ start, end });
-};
-
 const applyReminder = (
   reminder: PlannerReminder | undefined,
   fallback: PlannerReminder,
 ): PlannerReminder => reminder ?? fallback;
-
-const buildPlanItem = (input: {
-  referenceId: string;
-  type: PlannerPlanItem["type"];
-  title: string;
-  window: PlannerTimeWindow;
-  status?: PlannerPlanItem["status"];
-  tags?: string[];
-}): PlannerPlanItem => ({
-  id: randomUUID(),
-  referenceId: input.referenceId,
-  type: input.type,
-  title: input.title,
-  window: input.window,
-  status: input.status,
-  tags: input.tags,
-});
-
-const formatDateForIcs = (date: Date) =>
-  `${date.toISOString().replace(/[-:]/g, "").split(".")[0]}Z`;
 
 const baseInviteUrl = process.env.APP_BASE_URL ?? "https://example.com";
 
@@ -171,10 +119,7 @@ export const createPlannerService = () => {
     if (existing) return existing;
 
     const initial: PlannerState = {
-      events: [],
       todos: [],
-      habits: [],
-      profile: { ...DEFAULT_PROFILE },
       friends: [],
       invites: [],
       crazyTasks: [],
@@ -187,68 +132,6 @@ export const createPlannerService = () => {
 
   const getStateMaybe = (userId: string): PlannerState | undefined =>
     store.get(userId);
-
-  const listEvents = async (
-    userId: string,
-    range?: PlannerRangeQuery,
-  ): Promise<PlannerEvent[]> => {
-    const state = getState(userId);
-    return state.events.filter((event) =>
-      windowOverlapsRange(event.window, range),
-    );
-  };
-
-  const createEvent = async (
-    userId: string,
-    input: PlannerEventInput,
-  ): Promise<PlannerEvent> => {
-    const state = getState(userId);
-    const event: PlannerEvent = {
-      id: randomUUID(),
-      ...input,
-      window: normalizeWindow(input.window),
-      reminder: applyReminder(
-        input.reminder,
-        state.profile.defaultReminders.event,
-      ),
-    };
-
-    state.events.push(event);
-    return event;
-  };
-
-  const updateEvent = async (
-    userId: string,
-    id: string,
-    patch: PlannerEventUpdate,
-  ): Promise<PlannerEvent | null> => {
-    const state = getState(userId);
-    const index = state.events.findIndex((event) => event.id === id);
-
-    if (index === -1) return null;
-
-    const current = state.events[index];
-    const updated: PlannerEvent = {
-      ...current,
-      ...patch,
-      window: patch.window ? normalizeWindow(patch.window) : current.window,
-      reminder: applyReminder(
-        patch.reminder ?? current.reminder,
-        state.profile.defaultReminders.event,
-      ),
-      recurrence: patch.recurrence ?? current.recurrence,
-    };
-
-    state.events[index] = updated;
-    return updated;
-  };
-
-  const deleteEvent = async (userId: string, id: string): Promise<boolean> => {
-    const state = getState(userId);
-    const sizeBefore = state.events.length;
-    state.events = state.events.filter((event) => event.id !== id);
-    return sizeBefore !== state.events.length;
-  };
 
   const listTodos = async (
     userId: string,
@@ -267,10 +150,7 @@ export const createPlannerService = () => {
       id: randomUUID(),
       ...input,
       due: input.due ? normalizeWindow(input.due) : undefined,
-      reminder: applyReminder(
-        input.reminder,
-        state.profile.defaultReminders.todo,
-      ),
+      reminder: applyReminder(input.reminder, DEFAULT_TODO_REMINDER),
       status: "pending",
     };
 
@@ -295,7 +175,7 @@ export const createPlannerService = () => {
       due: patch.due ? normalizeWindow(patch.due) : current.due,
       reminder: applyReminder(
         patch.reminder ?? current.reminder,
-        state.profile.defaultReminders.todo,
+        DEFAULT_TODO_REMINDER,
       ),
       recurrence: patch.recurrence ?? current.recurrence,
       status: patch.status ?? current.status,
@@ -310,196 +190,6 @@ export const createPlannerService = () => {
     const sizeBefore = state.todos.length;
     state.todos = state.todos.filter((todo) => todo.id !== id);
     return sizeBefore !== state.todos.length;
-  };
-
-  const listHabits = async (userId: string): Promise<PlannerHabit[]> => {
-    const state = getState(userId);
-    return state.habits;
-  };
-
-  const createHabit = async (
-    userId: string,
-    input: PlannerHabitInput,
-  ): Promise<PlannerHabit> => {
-    const state = getState(userId);
-    const habit: PlannerHabit = {
-      id: randomUUID(),
-      ...input,
-      reminder: applyReminder(
-        input.reminder,
-        state.profile.defaultReminders.habit,
-      ),
-      streak: 0,
-      progress: 0,
-    };
-
-    state.habits.push(habit);
-    return habit;
-  };
-
-  const updateHabit = async (
-    userId: string,
-    id: string,
-    patch: PlannerHabitUpdate,
-  ): Promise<PlannerHabit | null> => {
-    const state = getState(userId);
-    const index = state.habits.findIndex((habit) => habit.id === id);
-
-    if (index === -1) return null;
-
-    const current = state.habits[index];
-    const updated: PlannerHabit = {
-      ...current,
-      ...patch,
-      reminder: applyReminder(
-        patch.reminder ?? current.reminder,
-        state.profile.defaultReminders.habit,
-      ),
-      cadence: patch.cadence ?? current.cadence,
-    };
-
-    state.habits[index] = updated;
-    return updated;
-  };
-
-  const deleteHabit = async (userId: string, id: string): Promise<boolean> => {
-    const state = getState(userId);
-    const sizeBefore = state.habits.length;
-    state.habits = state.habits.filter((habit) => habit.id !== id);
-    return sizeBefore !== state.habits.length;
-  };
-
-  const getOverview = async (
-    userId: string,
-    range?: PlannerRangeQuery,
-  ): Promise<PlannerOverviewResponse> => {
-    const [events, todos, habits] = await Promise.all([
-      listEvents(userId, range),
-      listTodos(userId, range),
-      listHabits(userId),
-    ]);
-
-    return { events, todos, habits };
-  };
-
-  const getPlanPage = async (
-    userId: string,
-    range?: PlannerRangeQuery,
-  ): Promise<PlannerPlanPageResponse> => {
-    const [events, todos, habits] = await Promise.all([
-      listEvents(userId, range),
-      listTodos(userId, range),
-      listHabits(userId),
-    ]);
-
-    const items: PlannerPlanItem[] = [
-      ...events.map((event) =>
-        buildPlanItem({
-          referenceId: event.id,
-          type: "event",
-          title: event.title,
-          window: event.window,
-          status: "pending",
-          tags: event.tags,
-        }),
-      ),
-      ...todos.map((todo) =>
-        buildPlanItem({
-          referenceId: todo.id,
-          type: "todo",
-          title: todo.title,
-          window: todo.due ?? fallbackWindow(range),
-          status: todo.status,
-          tags: todo.tags,
-        }),
-      ),
-      ...habits.map((habit) =>
-        buildPlanItem({
-          referenceId: habit.id,
-          type: "habit",
-          title: habit.title,
-          window: fallbackWindow(range),
-          status: "pending",
-          tags: habit.tags,
-        }),
-      ),
-    ]
-      .filter((item) => windowOverlapsRange(item.window, range))
-      .sort(
-        (left, right) =>
-          left.window.start.getTime() - right.window.start.getTime(),
-      );
-
-    return {
-      range: { from: range?.from, to: range?.to },
-      items,
-    };
-  };
-
-  const getProfile = async (userId: string): Promise<PlannerProfile> =>
-    getState(userId).profile;
-
-  const updateProfile = async (
-    userId: string,
-    patch: PlannerProfileUpdate,
-  ): Promise<PlannerProfile> => {
-    const state = getState(userId);
-    state.profile = {
-      ...state.profile,
-      ...patch,
-      defaultReminders: {
-        ...state.profile.defaultReminders,
-        ...patch.defaultReminders,
-      },
-    };
-
-    return state.profile;
-  };
-
-  const exportCalendar = async (
-    userId: string,
-    range?: PlannerRangeQuery,
-  ): Promise<string> => {
-    const overview = await getOverview(userId, range);
-    const now = formatDateForIcs(new Date());
-    const lines = [
-      "BEGIN:VCALENDAR",
-      "VERSION:2.0",
-      "PRODID:-//acme/hse-vibe-hack//planner//EN",
-    ];
-
-    const addEvent = (
-      title: string,
-      window: PlannerTimeWindow,
-      description?: string,
-    ) => {
-      const normalized = normalizeWindow(window);
-      lines.push(
-        "BEGIN:VEVENT",
-        `UID:${randomUUID()}`,
-        `DTSTAMP:${now}`,
-        `DTSTART:${formatDateForIcs(normalized.start)}`,
-        `DTEND:${formatDateForIcs(normalized.end)}`,
-        `SUMMARY:${title}`,
-        `DESCRIPTION:${description ?? ""}`,
-        "END:VEVENT",
-      );
-    };
-
-    overview.events.forEach((event: PlannerEvent) => {
-      addEvent(event.title, event.window);
-    });
-    overview.todos.forEach((todo: PlannerTodo) => {
-      const window = todo.due ?? fallbackWindow(range);
-      addEvent(todo.title, window, todo.description);
-    });
-    overview.habits.forEach((habit: PlannerHabit) => {
-      const window = fallbackWindow(range);
-      addEvent(habit.title, window, habit.description);
-    });
-
-    lines.push("END:VCALENDAR");
-    return lines.join("\r\n");
   };
 
   const generateRandomTasks = async (
@@ -689,23 +379,10 @@ export const createPlannerService = () => {
   };
 
   return {
-    listEvents,
-    createEvent,
-    updateEvent,
-    deleteEvent,
     listTodos,
     createTodo,
     updateTodo,
     deleteTodo,
-    listHabits,
-    createHabit,
-    updateHabit,
-    deleteHabit,
-    getOverview,
-    getPlanPage,
-    getProfile,
-    updateProfile,
-    exportCalendar,
     generateRandomTasks,
     prioritizeTasks,
     createFriendInvite,
