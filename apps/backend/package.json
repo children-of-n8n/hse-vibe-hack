@@ -17,6 +17,8 @@
     "@elysiajs/cors": "^1.4.0",
     "@elysiajs/jwt": "^1.4.0",
     "@elysiajs/openapi": "^1.4.11",
+    "@langchain/core": "^1.1.4",
+    "@langchain/mistralai": "^1.0.1",
     "@sinclair/typebox": "^0.34.41",
     "drizzle-kit": "^0.31.7",
     "drizzle-orm": "^0.44.7",
