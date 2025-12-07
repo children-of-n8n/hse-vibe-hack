@@ -26,12 +26,10 @@ export const adventureSchema = t.Object({
   }),
   status: adventureStatusSchema,
   summary: t.Optional(
-    t.Nullable(
-      t.String({
-        maxLength: 512,
-        description: "AI-generated recap after completion",
-      }),
-    ),
+    t.String({
+      maxLength: 512,
+      description: "AI-generated recap after completion",
+    }),
   ),
   shareToken: t.String({
     minLength: 6,
