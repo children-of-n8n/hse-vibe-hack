@@ -17,6 +17,7 @@ export type AdventureParticipant = Static<typeof adventureParticipantSchema>;
 
 export const adventureSchema = t.Object({
   id: t.String({ format: "uuid" }),
+  creatorId: t.String({ format: "uuid" }),
   title: t.String({ minLength: 1, maxLength: 140 }),
   description: t.String({
     minLength: 1,

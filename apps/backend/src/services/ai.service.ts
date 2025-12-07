@@ -62,6 +62,12 @@ const extractText = (content: unknown): string => {
   return "";
 };
 
+const isTestRuntime = Boolean(
+  process.env.NODE_ENV === "test" ||
+    process.env.CI === "true" ||
+    process.argv.some((arg) => arg === "test" || arg.endsWith("/bun-test")),
+);
+
 const runMistral = async (
   llm: ChatMistralAI,
   messages: [SystemMessage, HumanMessage],
@@ -79,8 +85,10 @@ const runMistral = async (
 
 export const createAiClient = (): AiClient => {
   const apiKey = process.env.MISTRAL_API_KEY;
-  if (!apiKey) {
-    console.warn("MISTRAL_API_KEY is not set, using fallback AI responses.");
+  if (!apiKey || isTestRuntime) {
+    console.warn(
+      "Mistral is disabled (no key or test/CI), using fallback AI responses.",
+    );
     return fallbackClient;
   }
 

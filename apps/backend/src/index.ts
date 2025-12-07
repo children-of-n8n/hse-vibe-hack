@@ -3,14 +3,11 @@ import { Elysia, InvertedStatusMap, redirect } from "elysia";
 import { createAdventureController } from "@acme/backend/controllers/adventure.controller";
 import { createAuthController } from "@acme/backend/controllers/auth.controller";
 import { createUserController } from "@acme/backend/controllers/user.controller";
-import { runMigrationsIfNeeded } from "@acme/backend/db/migrate-on-start";
 import { PostgresFriendRepository } from "@acme/backend/domain/friends/friend.postgres-repository";
 import { PostgresUserRepository } from "@acme/backend/domain/users/user.postgres-repository";
 import { cors } from "@acme/backend/http/plugins/cors";
 import { openapi } from "@acme/backend/http/plugins/openapi";
 import { createPostgresAdventureStore } from "@acme/backend/services/adventure.store.postgres";
-
-await runMigrationsIfNeeded();
 
 const userRepository = new PostgresUserRepository();
 const adventureStore = createPostgresAdventureStore();

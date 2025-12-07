@@ -1,6 +1,7 @@
 import { describe, expect, it } from "bun:test";
 
 import { createAdventureService } from "@acme/backend/services/adventure.service";
+import { createInMemoryAdventureStore } from "@acme/backend/services/adventure.store";
 
 import { InMemoryUserRepository } from "../../../mocks";
 
@@ -11,7 +12,10 @@ describe("adventure service", () => {
       username: "alice",
       password: "secret",
     });
-    const service = createAdventureService({ users });
+    const service = createAdventureService({
+      users,
+      store: createInMemoryAdventureStore(),
+    });
 
     const adventure = await service.createAdventure(creator.id, {
       title: "Ночное приключение",
@@ -20,13 +24,18 @@ describe("adventure service", () => {
     expect(adventure.shareToken).toMatch(/ADV-/);
     expect(adventure.participants[0]?.id).toBe(creator.id);
     expect(adventure.status).toBe("upcoming");
+    expect(adventure.creator.id).toBe(creator.id);
+    expect(adventure.startsAt).toBeInstanceOf(Date);
   });
 
   it("joins by token and completes adventure", async () => {
     const users = new InMemoryUserRepository();
     const owner = await users.create({ username: "owner", password: "pwd" });
     const friend = await users.create({ username: "bob", password: "pwd" });
-    const service = createAdventureService({ users });
+    const service = createAdventureService({
+      users,
+      store: createInMemoryAdventureStore(),
+    });
 
     const adventure = await service.createAdventure(owner.id, {
       title: "Пешком за соком",
@@ -35,14 +44,17 @@ describe("adventure service", () => {
     const joined = await service.joinByToken(friend.id, adventure.shareToken);
     expect(joined?.participants.some((p) => p.id === friend.id)).toBe(true);
 
-    const completed = await service.completeAdventure(adventure.id);
+    const completed = await service.completeAdventure(adventure.id, owner.id);
     expect(completed?.status).toBe("completed");
   });
 
   it("returns null when joining invalid token and signing missing adventure", async () => {
     const users = new InMemoryUserRepository();
     const owner = await users.create({ username: "owner2", password: "pwd" });
-    const service = createAdventureService({ users });
+    const service = createAdventureService({
+      users,
+      store: createInMemoryAdventureStore(),
+    });
 
     const miss = await service.joinByToken(owner.id, "missing");
     expect(miss).toBeNull();
@@ -54,7 +66,10 @@ describe("adventure service", () => {
   it("invalidates cached lists after status change", async () => {
     const users = new InMemoryUserRepository();
     const owner = await users.create({ username: "cache", password: "pwd" });
-    const service = createAdventureService({ users });
+    const service = createAdventureService({
+      users,
+      store: createInMemoryAdventureStore(),
+    });
 
     const adventure = await service.createAdventure(owner.id, {
       title: "Кеш-тест",
@@ -63,7 +78,7 @@ describe("adventure service", () => {
     const first = await service.listByStatus(owner.id, "upcoming");
     expect(first.find((a) => a.id === adventure.id)).toBeDefined();
 
-    await service.completeAdventure(adventure.id);
+    await service.completeAdventure(adventure.id, owner.id);
     const upcoming = await service.listByStatus(owner.id, "upcoming");
     expect(upcoming.find((a) => a.id === adventure.id)).toBeUndefined();
 
@@ -74,7 +89,10 @@ describe("adventure service", () => {
   it("uploads photo and manages reactions", async () => {
     const users = new InMemoryUserRepository();
     const owner = await users.create({ username: "owner", password: "pwd" });
-    const service = createAdventureService({ users });
+    const service = createAdventureService({
+      users,
+      store: createInMemoryAdventureStore(),
+    });
     const adventure = await service.createAdventure(owner.id, {
       title: "Фото-тест",
     });
@@ -112,7 +130,10 @@ describe("adventure service", () => {
 
   it("returns null for missing adventure lookups", async () => {
     const users = new InMemoryUserRepository();
-    const service = createAdventureService({ users });
+    const service = createAdventureService({
+      users,
+      store: createInMemoryAdventureStore(),
+    });
 
     expect(await service.getById("missing")).toBeNull();
     expect(await service.listParticipants("missing")).toBeNull();
