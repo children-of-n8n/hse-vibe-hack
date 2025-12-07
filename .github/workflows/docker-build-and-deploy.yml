@@ -104,7 +104,7 @@ jobs:
           MINIO_ROOT_PASSWORD: minio123
         ports:
           - 9000:9000
-        command: server /data --console-address ":9001"
+        entrypoint: ["/bin/sh", "-c", "minio server /data --console-address :9001"]
         options: >-
           --health-cmd "curl -f http://localhost:9000/minio/health/ready"
           --health-interval 10s
