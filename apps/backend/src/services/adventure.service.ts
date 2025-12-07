@@ -43,6 +43,17 @@ export const createAdventureService = (deps: {
       ? createInMemoryAdventureStore(now)
       : createLazyPostgresStore(now));
 
+  const isParticipant = (
+    adventure: Adventure | null,
+    userId: string,
+  ): adventure is Adventure => {
+    if (!adventure) return false;
+    return (
+      adventure.creatorId === userId ||
+      adventure.participants.some((participant) => participant.id === userId)
+    );
+  };
+
   const participantForUser = async (
     userId: string,
   ): Promise<AdventureParticipant> => {
@@ -79,7 +90,7 @@ export const createAdventureService = (deps: {
       title: input.title,
       description,
       status: "upcoming",
-      summary: undefined,
+      summary: null,
       shareToken: buildShareToken(),
       creator,
       participants: [creator, ...friendParticipants],
@@ -225,10 +236,7 @@ export const createAdventureService = (deps: {
     file?: File | Blob,
   ): Promise<AdventurePhoto | null> => {
     const adventure = await store.findById(adventureId);
-    const isParticipant = adventure?.participants.some(
-      (participant) => participant.id === uploaderId,
-    );
-    if (!adventure || !isParticipant) return null;
+    if (!isParticipant(adventure, uploaderId)) return null;
 
     const fileName =
       (file && "name" in file && typeof file.name === "string" && file.name) ||
@@ -253,12 +261,11 @@ export const createAdventureService = (deps: {
             status: response.status,
             statusText: response.statusText,
           });
-          return null;
+        } else {
+          uploadedUrl = signed.photoUrl;
         }
-        uploadedUrl = signed.photoUrl;
       } catch (error) {
         console.error("Photo upload failed", error);
-        return null;
       }
     }
 
@@ -283,12 +290,7 @@ export const createAdventureService = (deps: {
     requesterId: string,
   ) => {
     const adventure = await store.findById(adventureId);
-    if (!adventure) return null;
-
-    const isParticipant = adventure.participants.some(
-      (p) => p.id === requesterId,
-    );
-    if (!isParticipant) return null;
+    if (!isParticipant(adventure, requesterId)) return null;
 
     const photos = await store.listPhotos(adventureId);
     const photo = photos?.find((p) => p.id === photoId);
@@ -315,10 +317,9 @@ export const createAdventureService = (deps: {
 
     const adventure =
       viewerId && photos.length > 0 ? await store.findById(adventureId) : null;
-    const canViewSigned =
-      Boolean(viewerId) &&
-      Boolean(adventure) &&
-      adventure?.participants.some((p) => p.id === viewerId);
+    const viewerIsParticipant =
+      typeof viewerId === "string" && isParticipant(adventure, viewerId);
+    const canViewSigned = viewerIsParticipant;
 
     const withReactions = await Promise.all(
       photos.map(async (photo) => {
@@ -349,9 +350,7 @@ export const createAdventureService = (deps: {
     emoji: string,
   ): Promise<AdventureReaction | null> => {
     const adventure = await store.findById(adventureId);
-    if (!adventure) return null;
-    const isParticipant = adventure.participants.some((p) => p.id === userId);
-    if (!isParticipant) return null;
+    if (!isParticipant(adventure, userId)) return null;
 
     const reaction: AdventureReaction = {
       id: randomUUID(),
@@ -374,9 +373,7 @@ export const createAdventureService = (deps: {
     emoji: string,
   ): Promise<boolean> => {
     const adventure = await store.findById(adventureId);
-    if (!adventure) return false;
-    const isParticipant = adventure.participants.some((p) => p.id === userId);
-    if (!isParticipant) return false;
+    if (!isParticipant(adventure, userId)) return false;
 
     const removed = await store.removeReaction(adventureId, userId, emoji);
     if (removed) {
@@ -397,10 +394,7 @@ export const createAdventureService = (deps: {
     filename: string,
   ) => {
     const adventure = await store.findById(adventureId);
-    const isParticipant = adventure?.participants.some(
-      (participant) => participant.id === requesterId,
-    );
-    if (!adventure || !isParticipant) return null;
+    if (!isParticipant(adventure, requesterId)) return null;
 
     const key = `adventures/${adventureId}/${randomUUID()}/${filename}`;
     return signer.signPutUrl(key, contentTypeFromFilename(filename));
@@ -439,7 +433,7 @@ export const createAdventureService = (deps: {
   };
 };
 
-const createLazyPostgresStore = (now: () => Date) => {
+const createLazyPostgresStore = (_now: () => Date) => {
   // Lazy import to avoid loading DB client when not needed (e.g., tests without DATABASE_URL).
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const { createPostgresAdventureStore } =

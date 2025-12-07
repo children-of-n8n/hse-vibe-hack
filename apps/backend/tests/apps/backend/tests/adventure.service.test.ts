@@ -104,7 +104,11 @@ describe("adventure service", () => {
 
     await service.joinByToken(friend.id, adventure.shareToken);
 
-    const signed = await service.signPhotoUpload(adventure.id, "image.jpg");
+    const signed = await service.signPhotoUpload(
+      adventure.id,
+      owner.id,
+      "image.jpg",
+    );
     expect(signed?.uploadUrl).toContain("image.jpg");
 
     const photo = await service.uploadPhoto(
